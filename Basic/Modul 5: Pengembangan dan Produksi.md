@@ -5,7 +5,10 @@
 #### Pengantar Testing
 Testing adalah proses memeriksa apakah kode yang kita tulis berfungsi sebagaimana mestinya. Testing memastikan kualitas dan keandalan kode.
 
-#### Unit Testing dengan Jest
+#### Pengantar Unit Testing
+Unit testing adalah metode pengujian di mana bagian terkecil dari kode, yang disebut unit, diuji secara individual untuk memastikan bahwa mereka berfungsi sebagaimana mestinya.
+
+#### Instalasi Jest
 Jest adalah framework testing yang populer untuk JavaScript. Ini memungkinkan kita untuk menulis dan menjalankan tes dengan mudah.
 
 **Instalasi Jest:**
@@ -13,7 +16,7 @@ Jest adalah framework testing yang populer untuk JavaScript. Ini memungkinkan ki
 npm install --save-dev jest
 ```
 
-**Menulis Tes Dasar:**
+#### Menulis Tes Dasar
 Tes ditulis dalam file terpisah dengan ekstensi `.test.js` atau `.spec.js`.
 
 **Contoh:**
@@ -34,14 +37,33 @@ test('menambah 1 + 2 untuk mendapatkan 3', () => {
 });
 ```
 
-**Menjalankan Tes:**
+#### Menjalankan Tes
 Jalankan tes dengan perintah berikut:
 ```bash
 npx jest
 ```
 
-#### Integration Testing
+#### Menggunakan Matcher
+Jest menyediakan berbagai matcher untuk memeriksa nilai yang diharapkan.
+
+**Contoh:**
+```javascript
+test('dua tambah dua adalah empat', () => {
+  expect(2 + 2).toBe(4);
+});
+
+test('objek assignment', () => {
+  const data = {one: 1};
+  data['two'] = 2;
+  expect(data).toEqual({one: 1, two: 2});
+});
+
+
+#### Pengantar Integration Testing
 Integration testing adalah metode pengujian di mana beberapa unit yang saling berinteraksi diuji bersama-sama untuk memastikan mereka berfungsi dengan baik.
+
+#### Menulis Integration Test
+Integration test menguji bagaimana beberapa unit bekerja bersama-sama.
 
 **Contoh:**
 **File: user.js**
@@ -82,14 +104,64 @@ test('membuat pesanan untuk user', () => {
 });
 ```
 
+#### Mocking dengan Jest
+Mocking adalah teknik untuk mengganti fungsi atau modul asli dengan versi tiruan untuk pengujian. Ini berguna untuk menguji unit tanpa harus bergantung pada implementasi eksternal.
+
+**Contoh Mocking:**
+**File: user.js**
+```javascript
+function getUser(id) {
+  return { id, name: 'John Doe' };
+}
+
+module.exports = getUser;
+```
+
+**File: order.js**
+```javascript
+const getUser = require('./user');
+
+function createOrder(userId, item) {
+  const user = getUser(userId);
+  return {
+    user: user.name,
+    item
+  };
+}
+
+module.exports = createOrder;
+```
+
+**File: order.test.js**
+```javascript
+const createOrder = require('./order');
+const getUser = require('./user');
+
+jest.mock('./user'); // Mocking modul user
+
+test('membuat pesanan untuk user', () => {
+  getUser.mockReturnValue({ id: 1, name: 'Mocked User' });
+
+  const order = createOrder(1, 'Laptop');
+  expect(order).toEqual({
+    user: 'Mocked User',
+    item: 'Laptop'
+  });
+});
+```
+
 #### Debugging dengan DevTools
-Debugging adalah proses menemukan dan memperbaiki kesalahan atau bug dalam kode. DevTools adalah alat debugging yang kuat yang tersedia di sebagian besar browser modern.
+#### Pengantar Debugging
+Debugging adalah proses menemukan dan memperbaiki kesalahan atau bug dalam kode. Debugging yang efektif dapat menghemat banyak waktu dan usaha dalam pengembangan perangkat lunak.
+
+#### Alat Debugging di Browser
+Kebanyakan browser modern memiliki alat debugging yang kuat. Google Chrome DevTools adalah salah satu yang paling populer.
 
 **Membuka DevTools:**
 - Tekan `F12` atau `Ctrl+Shift+I` (Windows/Linux).
 - Tekan `Cmd+Opt+I` (Mac).
 
-**Menggunakan Console:**
+#### Menggunakan Console
 Konsol adalah alat penting untuk debugging. Kita bisa mencetak pesan, variabel, dan objek untuk melihat apa yang terjadi dalam kode.
 
 **Contoh:**
@@ -98,27 +170,27 @@ let x = 10;
 console.log("Nilai x adalah", x);
 ```
 
-**Breakpoints:**
+#### Breakpoints
 Breakpoints memungkinkan kita untuk menghentikan eksekusi kode pada baris tertentu sehingga kita dapat memeriksa status program pada saat itu.
 
 **Cara Menambahkan Breakpoint:**
 1. Buka file JavaScript di tab `Sources` di DevTools.
 2. Klik pada nomor baris di mana Anda ingin menambahkan breakpoint.
 
-**Watch Expressions:**
+#### Menggunakan Watch Expressions
 Watch expressions memungkinkan kita untuk memantau nilai variabel atau ekspresi saat eksekusi program.
 
 **Menambahkan Watch Expression:**
 1. Buka tab `Watch` di DevTools.
 2. Klik ikon `+` dan tambahkan ekspresi yang ingin Anda pantau.
 
-#### Langkah-langkah Debugging:
-1. **Identifikasi Masalah:** Temukan bagian kode yang tidak berfungsi sebagaimana mestinya.
-2. **Tambahkan Breakpoints:** Tempatkan breakpoints di tempat yang relevan.
-3. **Jalankan Kode:** Biarkan kode berjalan hingga mencapai breakpoint.
-4. **Periksa State:** Gunakan watch expressions dan console untuk memeriksa nilai variabel.
-5. **Perbaiki Kode:** Lakukan perubahan yang diperlukan untuk memperbaiki masalah.
-6. **Uji Kembali:** Jalankan kode lagi untuk memastikan masalah telah teratasi.
+#### Langkah-langkah Debugging
+1. **Identifikasi Masalah**: Temukan bagian kode yang tidak berfungsi sebagaimana mestinya.
+2. **Tambahkan Breakpoints**: Tempatkan breakpoints di tempat yang relevan.
+3. **Jalankan Kode**: Biarkan kode berjalan hingga mencapai breakpoint.
+4. **Periksa State**: Gunakan watch expressions dan console untuk memeriksa nilai variabel.
+5. **Perbaiki Kode**: Lakukan perubahan yang diperlukan untuk memperbaiki masalah.
+6. **Uji Kembali**: Jalankan kode lagi untuk memastikan masalah telah teratasi.
 
 ---
 
