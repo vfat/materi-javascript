@@ -563,8 +563,42 @@ Dengan menggunakan interfaces, Anda bisa mengembangkan kode yang lebih kuat dan 
 
 ## Bagian 3: TypeScript Lanjutan
 ### 1. Kelas dan Objek
-TypeScript mendukung konsep kelas dan objek, termasuk pewarisan, enkapsulasi, dan polimorfisme.
 
+Dalam TypeScript, konsep kelas dan objek memungkinkan kita untuk mendefinisikan struktur dan perilaku entitas dalam program dengan cara yang lebih terorganisir dan modular. Berikut adalah penjelasan lebih detail terkait kelas dan objek, termasuk konsep inheritance, encapsulation, dan polymorphism.
+
+#### 1.1.cKelas dan Objek
+
+**Kelas** adalah cetak biru untuk membuat objek. Kelas mendefinisikan properti dan metode yang akan dimiliki oleh objek yang dibuat dari kelas tersebut.
+
+**Objek** adalah instance dari kelas. Ketika objek dibuat, objek tersebut mendapatkan properti dan metode yang didefinisikan oleh kelasnya.
+
+Contoh:
+```typescript
+class Animal {
+    private name: string; // Properti 'name' bersifat private
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public move(distance: number): void {
+        console.log(`${this.name} moved ${distance} meters.`);
+    }
+}
+
+let dog = new Animal("Dog"); // Membuat objek baru dari kelas Animal
+dog.move(10); // Output: Dog moved 10 meters.
+```
+
+#### 1.2. Encapsulation
+
+**Encapsulation** adalah konsep untuk menyembunyikan data atau informasi dari pengguna luar dengan cara mengontrol akses terhadap properti atau metode kelas melalui modifier akses seperti `private`, `protected`, dan `public`.
+
+- **private**: Hanya dapat diakses dari dalam kelas itu sendiri.
+- **protected**: Dapat diakses dari dalam kelas itu sendiri dan kelas turunannya.
+- **public**: Dapat diakses dari mana saja.
+
+Contoh:
 ```typescript
 class Animal {
     private name: string;
@@ -579,8 +613,86 @@ class Animal {
 }
 
 let dog = new Animal("Dog");
-dog.move(10);
+// dog.name = "Cat"; // Error: Property 'name' is private and only accessible within class 'Animal'.
+dog.move(10); // Output: Dog moved 10 meters.
 ```
+
+#### 1.3. Inheritance
+
+**Inheritance** memungkinkan sebuah kelas (subclass) untuk mewarisi properti dan metode dari kelas lain (superclass). Ini memungkinkan penggunaan kembali kode dan pembuatan hierarki kelas yang logis.
+
+Contoh:
+```typescript
+class Animal {
+    protected name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public move(distance: number): void {
+        console.log(`${this.name} moved ${distance} meters.`);
+    }
+}
+
+class Dog extends Animal {
+    constructor(name: string) {
+        super(name); // Memanggil konstruktor dari kelas induk
+    }
+
+    public bark(): void {
+        console.log("Woof! Woof!");
+    }
+}
+
+let dog = new Dog("Dog");
+dog.bark(); // Output: Woof! Woof!
+dog.move(10); // Output: Dog moved 10 meters.
+```
+
+#### 1.4. Polymorphism
+
+**Polymorphism** adalah konsep di mana satu metode dapat memiliki banyak bentuk. Dalam konteks objek, ini berarti bahwa metode yang sama dapat berperilaku berbeda tergantung pada objek yang memanggilnya.
+
+Contoh:
+```typescript
+class Animal {
+    protected name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    public move(distance: number): void {
+        console.log(`${this.name} moved ${distance} meters.`);
+    }
+}
+
+class Bird extends Animal {
+    constructor(name: string) {
+        super(name);
+    }
+
+    public move(distance: number): void {
+        console.log(`${this.name} flew ${distance} meters.`);
+    }
+}
+
+let dog = new Animal("Dog");
+let bird = new Bird("Bird");
+
+dog.move(10); // Output: Dog moved 10 meters.
+bird.move(20); // Output: Bird flew 20 meters.
+```
+
+### 1.5. Kesimpulan
+
+- **Kelas dan Objek**: Kelas adalah cetak biru untuk membuat objek, sedangkan objek adalah instance dari kelas tersebut.
+- **Encapsulation**: Menyembunyikan detail implementasi dengan menggunakan modifier akses (`private`, `protected`, `public`).
+- **Inheritance**: Memungkinkan kelas untuk mewarisi properti dan metode dari kelas lain, memungkinkan penggunaan kembali kode.
+- **Polymorphism**: Memungkinkan metode yang sama untuk berperilaku berbeda tergantung pada objek yang memanggilnya.
+
+Dengan menggunakan konsep-konsep ini, TypeScript memungkinkan pembuatan kode yang lebih terstruktur, modular, dan mudah di-maintain.
 
 ### 2. Generic
 Generic memungkinkan Anda membuat komponen yang dapat bekerja dengan berbagai tipe data.
