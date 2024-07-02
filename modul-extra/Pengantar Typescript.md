@@ -235,6 +235,134 @@ let user = { firstName: "John", lastName: "Doe" };
 
 console.log(greeter(user));
 ```
+Interfaces di TypeScript adalah alat yang sangat kuat untuk mendefinisikan kontrak dalam kode Anda. Kontrak ini menentukan bentuk objek dan memastikan bahwa objek yang melewati atau menggunakan kode tertentu sesuai dengan bentuk yang diharapkan.
+
+### 4.1. Penjelasan Konsep Interface
+
+**Interface** adalah sebuah deklarasi tipe di TypeScript yang memungkinkan Anda untuk mendefinisikan struktur dari objek. Interface mendefinisikan sifat-sifat yang objek harus miliki dan tipe dari sifat-sifat tersebut. Kelas atau objek yang mengimplementasikan interface harus mengikuti struktur yang ditentukan oleh interface tersebut.
+
+### 4.2. Contoh dan Penjelasan
+
+Mari kita bahas contoh yang diberikan dengan lebih detail.
+
+#### 4.2.1. Mendefinisikan Interface
+
+```typescript
+interface Person {
+    firstName: string;
+    lastName: string;
+}
+```
+
+- **Person**: Nama interface.
+- `firstName: string`: Properti `firstName` bertipe `string` yang wajib ada.
+- `lastName: string`: Properti `lastName` bertipe `string` yang wajib ada.
+
+Interface **Person** mendefinisikan bahwa objek bertipe **Person** harus memiliki dua properti: `firstName` dan `lastName`, keduanya bertipe `string`.
+
+#### 4.2.2. Menggunakan Interface pada Fungsi
+
+```typescript
+function greeter(person: Person) {
+    return "Hello, " + person.firstName + " " + person.lastName;
+}
+```
+
+- **greeter(person: Person)**: Fungsi `greeter` menerima parameter `person` yang harus mengikuti struktur yang ditentukan oleh interface **Person**.
+- **return statement**: Fungsi ini mengembalikan string yang menggabungkan `firstName` dan `lastName` dari objek `person`.
+
+#### 4.2.3. Membuat Objek yang Memenuhi Interface
+
+```typescript
+let user = { firstName: "John", lastName: "Doe" };
+```
+
+- **user**: Objek ini memiliki properti `firstName` dan `lastName` dengan tipe `string`, sehingga sesuai dengan interface **Person**.
+
+#### 4.2.4. Menggunakan Fungsi dengan Objek yang Memenuhi Interface
+
+```typescript
+console.log(greeter(user)); // Output: "Hello, John Doe"
+```
+
+- **greeter(user)**: Memanggil fungsi `greeter` dengan objek `user`. Karena `user` memiliki struktur yang sesuai dengan interface **Person**, fungsi ini bekerja dengan benar dan menghasilkan output yang diharapkan.
+
+### 4.3. Implementasi Interface pada Kelas
+
+Selain objek langsung, interface juga bisa diimplementasikan oleh kelas. Kelas yang mengimplementasikan interface harus memiliki properti dan metode yang ditentukan oleh interface.
+
+#### Contoh Implementasi Interface pada Kelas
+
+```typescript
+interface Person {
+    firstName: string;
+    lastName: string;
+}
+
+class Employee implements Person {
+    firstName: string;
+    lastName: string;
+    employeeId: number;
+
+    constructor(firstName: string, lastName: string, employeeId: number) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.employeeId = employeeId;
+    }
+}
+
+let employee = new Employee("Jane", "Smith", 123);
+console.log(greeter(employee)); // Output: "Hello, Jane Smith"
+```
+
+- **Employee implements Person**: Kelas `Employee` mengimplementasikan interface `Person`.
+- **firstName dan lastName**: Kelas `Employee` memiliki properti `firstName` dan `lastName`, sehingga sesuai dengan interface `Person`.
+- **employeeId**: Kelas `Employee` juga memiliki properti tambahan `employeeId`.
+
+### 4.4. Interface dengan Metode
+
+Interface juga bisa mendefinisikan metode selain properti.
+
+#### Contoh Interface dengan Metode
+
+```typescript
+interface Person {
+    firstName: string;
+    lastName: string;
+    getFullName(): string;
+}
+
+class Employee implements Person {
+    firstName: string;
+    lastName: string;
+    employeeId: number;
+
+    constructor(firstName: string, lastName: string, employeeId: number) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.employeeId = employeeId;
+    }
+
+    getFullName(): string {
+        return `${this.firstName} ${this.lastName}`;
+    }
+}
+
+let employee = new Employee("Jane", "Smith", 123);
+console.log(employee.getFullName()); // Output: "Jane Smith"
+```
+
+- **getFullName(): string**: Interface `Person` mendefinisikan metode `getFullName` yang mengembalikan `string`.
+- **getFullName pada Employee**: Kelas `Employee` mengimplementasikan metode `getFullName`, sehingga sesuai dengan interface `Person`.
+
+### 4.5. Kesimpulan
+
+Interfaces di TypeScript membantu dalam:
+- Menentukan kontrak yang jelas untuk objek dan kelas.
+- Memastikan konsistensi tipe di seluruh aplikasi.
+- Meningkatkan keandalan dan keterbacaan kode dengan mendefinisikan struktur yang diharapkan.
+
+Dengan menggunakan interfaces, Anda bisa mengembangkan kode yang lebih kuat dan lebih mudah dipelihara, karena TypeScript akan memberikan kesalahan kompilasi jika objek atau kelas tidak sesuai dengan kontrak yang ditentukan.
 
 ## Bagian 3: TypeScript Lanjutan
 ### 1. Kelas dan Objek
