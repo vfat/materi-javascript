@@ -46,13 +46,130 @@ let x: [string, number] = ["hello", 10]; // Tuple
 ### 3. Fungsi
 TypeScript mendukung tipe untuk parameter fungsi dan nilai kembaliannya.
 
+TypeScript menambahkan tipe statis ke JavaScript, memungkinkan pengembang untuk mendefinisikan tipe parameter dan nilai kembalian dari fungsi. Ini membantu dalam meningkatkan keandalan dan keterbacaan kode. Mari kita bahas detail tentang fungsi di TypeScript dengan dukungan tipe.
+
+### 3.1 Tipe pada Parameter Fungsi dan Nilai Kembalian
+
+TypeScript memungkinkan Anda untuk mendeklarasikan tipe parameter fungsi dan tipe nilai yang dikembalikan oleh fungsi. Ini membantu dalam mencegah kesalahan tipe yang umum terjadi dalam JavaScript.
+
+### 3.2 Deklarasi Fungsi dengan Tipe
+
+#### 3.2.1. Fungsi Biasa
+
+Berikut adalah contoh fungsi biasa dengan tipe parameter dan nilai kembalian:
+
 ```typescript
 function add(x: number, y: number): number {
     return x + y;
 }
+```
 
+**Penjelasan**:
+- `x: number`: Parameter `x` harus berupa `number`.
+- `y: number`: Parameter `y` harus berupa `number`.
+- `): number {`: Fungsi `add` harus mengembalikan nilai bertipe `number`.
+
+Jika Anda mencoba memanggil fungsi ini dengan argumen yang bukan `number`, TypeScript akan memberikan kesalahan kompilasi.
+
+#### 3.2.2. Fungsi Anonim (Anonymous Function)
+
+Anda juga bisa mendefinisikan tipe untuk fungsi anonim:
+
+```typescript
 let myAdd = function(x: number, y: number): number { return x + y; };
 ```
+
+**Penjelasan**:
+- `x: number`: Parameter `x` harus berupa `number`.
+- `y: number`: Parameter `y` harus berupa `number`.
+- `): number {`: Fungsi anonim harus mengembalikan nilai bertipe `number`.
+
+### 3.3. Arrow Functions dengan Tipe
+
+TypeScript juga mendukung tipe pada fungsi panah (arrow functions):
+
+```typescript
+let add = (x: number, y: number): number => {
+    return x + y;
+}
+```
+
+**Penjelasan**:
+- `(x: number, y: number)`: Parameter `x` dan `y` harus berupa `number`.
+- `): number => {`: Fungsi panah harus mengembalikan nilai bertipe `number`.
+
+### 3.4. Fungsi dengan Tipe yang Lebih Kompleks
+
+TypeScript memungkinkan penggunaan tipe yang lebih kompleks untuk parameter dan nilai kembalian, termasuk tipe objek, union, dan lainnya.
+
+#### 3.5. Tipe Objek sebagai Parameter
+
+```typescript
+function greet(person: { name: string, age: number }): string {
+    return `Hello ${person.name}, you are ${person.age} years old.`;
+}
+```
+
+**Penjelasan**:
+- `person: { name: string, age: number }`: Parameter `person` harus berupa objek dengan properti `name` bertipe `string` dan `age` bertipe `number`.
+- `): string {`: Fungsi `greet` harus mengembalikan nilai bertipe `string`.
+
+#### 3.6. Union Types sebagai Parameter
+
+```typescript
+function printId(id: number | string) {
+    console.log(`Your ID is: ${id}`);
+}
+```
+
+**Penjelasan**:
+- `id: number | string`: Parameter `id` bisa berupa `number` atau `string`.
+
+### 3.7. Tipe Fungsi
+
+Anda bisa mendeklarasikan tipe fungsi untuk memastikan konsistensi di seluruh kode.
+
+```typescript
+type AddFunction = (x: number, y: number) => number;
+
+let add: AddFunction = (x, y) => {
+    return x + y;
+};
+```
+
+**Penjelasan**:
+- `type AddFunction = (x: number, y: number) => number;`: Mendefinisikan tipe `AddFunction` sebagai fungsi yang menerima dua parameter `number` dan mengembalikan `number`.
+- `let add: AddFunction = (x, y) => { ... };`: Mendeklarasikan variabel `add` dengan tipe `AddFunction`.
+
+### 3.8. Default Parameters dan Optional Parameters
+
+TypeScript juga mendukung parameter default dan parameter opsional.
+
+#### 3.9. Default Parameters
+
+```typescript
+function multiply(a: number, b: number = 1): number {
+    return a * b;
+}
+```
+
+**Penjelasan**:
+- `b: number = 1`: Parameter `b` memiliki nilai default `1`.
+
+#### 3.10. Optional Parameters
+
+```typescript
+function buildName(firstName: string, lastName?: string): string {
+    return lastName ? `${firstName} ${lastName}` : firstName;
+}
+```
+
+**Penjelasan**:
+- `lastName?: string`: Parameter `lastName` bersifat opsional.
+
+### 3.11. Kesimpulan
+
+TypeScript memberikan dukungan yang kuat untuk tipe pada parameter dan nilai kembalian fungsi. Dengan mendefinisikan tipe ini, Anda bisa menangkap kesalahan lebih awal dalam proses pengembangan, meningkatkan kualitas kode, dan mempermudah pemeliharaan kode. TypeScript memungkinkan Anda untuk menambahkan tipe pada berbagai macam fungsi, dari fungsi biasa hingga fungsi anonim dan fungsi panah, serta mendukung fitur tambahan seperti parameter default dan opsional.
 
 ### 4. Interface
 Interface adalah kontrak dalam kode yang menentukan sintaks untuk kelas yang mengimplementasikannya.
