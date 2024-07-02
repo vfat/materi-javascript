@@ -23,16 +23,16 @@ Total: 18 SKS
 Total: 18 SKS
 
 ### Semester 3
-1. **Pengembangan Backend**: Express.js, Koa.js, NestJS (4 SKS)
+1. **Pengembangan Backend**: Express.js, Fastify.js, NestJS (4 SKS)
 2. **Unit Testing dengan Jest** (2 SKS)
 3. **API Testing dengan Postman** (2 SKS)
-4. **Pengenalan Frontend Development**: React, Angular, Svelte, Astro (4 SKS)
+4. **Pengenalan Frontend Development**: React, Svelte, Astro (4 SKS)
 5. **End-to-End Testing dengan Cypress** (2 SKS)
 
 Total: 14 SKS
 
 ### Semester 4
-1. **Pengembangan Mobile dengan Expo, React Native, Ionic** (4 SKS)
+1. **Pengembangan Mobile**: React Native, Expo, Ionic (4 SKS)
 2. **Desain dan Manajemen Basis Data** (3 SKS)
 3. **Sistem Operasi** (3 SKS)
 4. **Pemrograman Web Lanjut** (3 SKS)
