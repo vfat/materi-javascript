@@ -125,6 +125,12 @@ TypeScript memungkinkan penggunaan tipe yang lebih kompleks untuk parameter dan 
 function greet(person: { name: string, age: number }): string {
     return `Hello ${person.name}, you are ${person.age} years old.`;
 }
+
+// Pemakaian
+let person = { name: "Alice", age: 30 };
+let greeting = greet(person); // greeting: "Hello Alice, you are 30 years old."
+console.log(greeting);
+
 ```
 
 **Penjelasan**:
@@ -137,6 +143,11 @@ function greet(person: { name: string, age: number }): string {
 function printId(id: number | string) {
     console.log(`Your ID is: ${id}`);
 }
+
+// Pemakaian
+printId(101);  // Your ID is: 101
+printId("202A"); // Your ID is: 202A
+
 ```
 
 **Penjelasan**:
@@ -149,9 +160,14 @@ Anda bisa mendeklarasikan tipe fungsi untuk memastikan konsistensi di seluruh ko
 ```typescript
 type AddFunction = (x: number, y: number) => number;
 
-let add: AddFunction = (x, y) => {
+let addFunction: AddFunction = (x, y) => {
     return x + y;
 };
+
+// Pemakaian
+let result = addFunction(4, 6); // result: 10
+console.log(result);
+
 ```
 
 **Penjelasan**:
@@ -168,6 +184,13 @@ TypeScript juga mendukung parameter default dan parameter opsional.
 function multiply(a: number, b: number = 1): number {
     return a * b;
 }
+
+// Pemakaian
+let result1 = multiply(5, 2); // result1: 10
+let result2 = multiply(5);    // result2: 5, karena b menggunakan nilai default 1
+console.log(result1);
+console.log(result2);
+
 ```
 
 **Penjelasan**:
@@ -179,6 +202,13 @@ function multiply(a: number, b: number = 1): number {
 function buildName(firstName: string, lastName?: string): string {
     return lastName ? `${firstName} ${lastName}` : firstName;
 }
+
+// Pemakaian
+let fullName1 = buildName("John", "Doe"); // fullName1: "John Doe"
+let fullName2 = buildName("Jane");        // fullName2: "Jane"
+console.log(fullName1);
+console.log(fullName2);
+
 ```
 
 **Penjelasan**:
