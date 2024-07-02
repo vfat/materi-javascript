@@ -83,7 +83,7 @@ Deklarasi variabel di TypeScript memungkinkan Anda untuk mendefinisikan tipe var
 
 ### 2.1. String
 
-Tipe `string` digunakan untuk merepresentasikan teks.
+Deklarasi variabel dengan tipe `string` digunakan untuk merepresentasikan teks.
 
 ```typescript
 let color: string = "blue";
@@ -97,7 +97,7 @@ console.log(message); // Output: The color is blue
 
 ### 2.2. Number
 
-Tipe `number` digunakan untuk merepresentasikan angka, baik bilangan bulat maupun desimal.
+Deklarasi variabel dengan tipe `number` digunakan untuk merepresentasikan angka, baik bilangan bulat maupun desimal.
 
 ```typescript
 let decimal: number = 6;
@@ -114,7 +114,7 @@ console.log(total); // Output: 61485
 
 ### 2.3. Boolean
 
-Tipe `boolean` digunakan untuk merepresentasikan nilai benar (`true`) atau salah (`false`).
+Deklarasi variabel dengan tipe `boolean` digunakan untuk merepresentasikan nilai benar (`true`) atau salah (`false`).
 
 ```typescript
 let isDone: boolean = false;
@@ -131,7 +131,7 @@ if (isDone) {
 
 ### 2.4. Array
 
-Tipe `array` digunakan untuk merepresentasikan daftar elemen dengan tipe yang sama.
+Deklarasi variabel dengan tipe `array` digunakan untuk merepresentasikan daftar elemen dengan tipe yang sama.
 
 ```typescript
 let list: number[] = [1, 2, 3];
@@ -152,7 +152,7 @@ let list: Array<number> = [1, 2, 3];
 
 ### 2.5. Tuple
 
-Tipe `tuple` digunakan untuk merepresentasikan array dengan elemen-elemen yang memiliki tipe berbeda.
+Deklarasi variabel dengan tipe `tuple` digunakan untuk merepresentasikan array dengan elemen-elemen yang memiliki tipe berbeda.
 
 ```typescript
 let x: [string, number] = ["hello", 10];
@@ -166,7 +166,7 @@ console.log(x[1]); // Output: 10
 
 ### 2.6. Enum
 
-Tipe `enum` digunakan untuk mendefinisikan sekumpulan nama konstanta.
+Deklarasi variabel dengan tipe `enum` digunakan untuk mendefinisikan sekumpulan nama konstanta.
 
 ```typescript
 enum Color { Red, Green, Blue }
@@ -182,7 +182,7 @@ console.log(colorName); // Output: Green
 
 ### 2.7. Any
 
-Tipe `any` digunakan ketika Anda tidak tahu tipe data apa yang akan digunakan. Ini berguna untuk migrasi dari JavaScript atau untuk bekerja dengan data dinamis.
+Deklarasi variabel dengan tipe `any` digunakan ketika Anda tidak tahu tipe data apa yang akan digunakan. Ini berguna untuk migrasi dari JavaScript atau untuk bekerja dengan data dinamis.
 
 ```typescript
 let notSure: any = 4;
@@ -199,7 +199,7 @@ console.log(list); // Output: [1, 100, "free"]
 
 ### 2.8. Void
 
-Tipe `void` digunakan untuk merepresentasikan ketiadaan tipe, sering digunakan sebagai tipe kembalian fungsi yang tidak mengembalikan nilai.
+Deklarasi variabel dengan tipe `void` digunakan untuk merepresentasikan ketiadaan tipe, sering digunakan sebagai tipe kembalian fungsi yang tidak mengembalikan nilai.
 
 ```typescript
 function warnUser(): void {
@@ -214,7 +214,7 @@ warnUser(); // Output: This is a warning message
 
 ### 2.9. Null dan Undefined
 
-TypeScript memiliki tipe `null` dan `undefined` yang merupakan subtipe dari semua tipe lainnya.
+Deklarasi variabel dengan tipe `null` dan `undefined` yang merupakan subtipe dari semua tipe lainnya.
 
 ```typescript
 let u: undefined = undefined;
@@ -223,7 +223,7 @@ let n: null = null;
 
 ### 2.10. Never
 
-Tipe `never` digunakan untuk tipe yang tidak pernah memiliki nilai. Ini sering digunakan pada fungsi yang selalu melemparkan pengecualian atau tidak pernah mengembalikan nilai.
+Deklarasi variabel dengan tipe `never` digunakan untuk tipe yang tidak pernah memiliki nilai. Ini sering digunakan pada fungsi yang selalu melemparkan pengecualian atau tidak pernah mengembalikan nilai.
 
 ```typescript
 function error(message: string): never {
