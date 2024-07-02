@@ -32,7 +32,44 @@ node hello.js
 
 ## Bagian 2: Dasar-Dasar TypeScript
 ### 1. Tipe Data Dasar
-TypeScript memiliki tipe data dasar seperti `string`, `number`, `boolean`, `array`, `tuple`, `enum`, dan `any`.
+TypeScript memperkenalkan beberapa tipe data dasar yang digunakan untuk memastikan bahwa nilai-nilai yang ditangani sesuai dengan tipe yang diharapkan. Ini membantu dalam pencegahan kesalahan dan meningkatkan keandalan kode. Berikut adalah penjelasan detail terkait tipe data dasar di TypeScript.
+
+### 1.1. String
+
+Tipe `string` digunakan untuk merepresentasikan teks.
+
+### 1.2. Number
+
+Tipe `number` digunakan untuk merepresentasikan angka, baik bilangan bulat maupun desimal.
+
+### 1.3. Boolean
+
+Tipe `boolean` digunakan untuk merepresentasikan nilai benar (`true`) atau salah (`false`).
+
+### 1.4. Array
+
+Tipe `array` digunakan untuk merepresentasikan daftar elemen dengan tipe yang sama.
+
+### 1.5. Tuple
+
+Tipe `tuple` digunakan untuk merepresentasikan array dengan elemen-elemen yang memiliki tipe berbeda.
+
+### 1.6. Enum
+
+Tipe `enum` digunakan untuk mendefinisikan sekumpulan nama konstanta.
+
+### 1.7. Any
+
+Tipe `any` digunakan ketika Anda tidak tahu tipe data apa yang akan digunakan. Ini berguna untuk migrasi dari JavaScript atau untuk bekerja dengan data dinamis.
+
+### 1.8. Void
+
+Tipe `void` digunakan untuk merepresentasikan ketiadaan tipe, sering digunakan sebagai tipe kembalian fungsi yang tidak mengembalikan nilai.
+
+
+### 1.9. Never
+
+Tipe `never` digunakan untuk tipe yang tidak pernah memiliki nilai. Ini sering digunakan pada fungsi yang selalu melemparkan pengecualian atau tidak pernah mengembalikan nilai.
 
 ### 2. Deklarasi Variabel
 ```typescript
@@ -43,8 +80,6 @@ let list: number[] = [1, 2, 3];
 let x: [string, number] = ["hello", 10]; // Tuple
 ```
 Deklarasi variabel di TypeScript memungkinkan Anda untuk mendefinisikan tipe variabel secara eksplisit, yang meningkatkan keandalan dan keterbacaan kode. Berikut adalah penjelasan detail tentang berbagai tipe variabel yang didukung oleh TypeScript beserta contoh penggunaannya.
-
-TypeScript memperkenalkan beberapa tipe data dasar yang digunakan untuk memastikan bahwa nilai-nilai yang ditangani sesuai dengan tipe yang diharapkan. Ini membantu dalam pencegahan kesalahan dan meningkatkan keandalan kode. Berikut adalah penjelasan detail terkait tipe data dasar di TypeScript.
 
 ### 2.1. String
 
