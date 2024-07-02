@@ -566,7 +566,7 @@ Dengan menggunakan interfaces, Anda bisa mengembangkan kode yang lebih kuat dan 
 
 Dalam TypeScript, konsep kelas dan objek memungkinkan kita untuk mendefinisikan struktur dan perilaku entitas dalam program dengan cara yang lebih terorganisir dan modular. Berikut adalah penjelasan lebih detail terkait kelas dan objek, termasuk konsep inheritance, encapsulation, dan polymorphism.
 
-#### 1.1.cKelas dan Objek
+#### 1.1. Kelas dan Objek
 
 **Kelas** adalah cetak biru untuk membuat objek. Kelas mendefinisikan properti dan metode yang akan dimiliki oleh objek yang dibuat dari kelas tersebut.
 
