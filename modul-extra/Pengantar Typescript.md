@@ -44,152 +44,166 @@ let x: [string, number] = ["hello", 10]; // Tuple
 ```
 Deklarasi variabel di TypeScript memungkinkan Anda untuk mendefinisikan tipe variabel secara eksplisit, yang meningkatkan keandalan dan keterbacaan kode. Berikut adalah penjelasan detail tentang berbagai tipe variabel yang didukung oleh TypeScript beserta contoh penggunaannya.
 
-### 2.1. Boolean
+TypeScript memperkenalkan beberapa tipe data dasar yang digunakan untuk memastikan bahwa nilai-nilai yang ditangani sesuai dengan tipe yang diharapkan. Ini membantu dalam pencegahan kesalahan dan meningkatkan keandalan kode. Berikut adalah penjelasan detail terkait tipe data dasar di TypeScript.
 
-Deklarasi variabel dengan tipe boolean.
+### 2.1. String
+
+Tipe `string` digunakan untuk merepresentasikan teks.
 
 ```typescript
-let isDone: boolean = false;
+let color: string = "blue";
 ```
 
-**Penjelasan**:
-- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok (block scope).
-- `isDone`: Nama variabel.
-- `boolean`: Tipe dari variabel `isDone`.
-- `false`: Nilai awal dari variabel `isDone`.
-
-**Penggunaan**:
+**Contoh Penggunaan**:
 ```typescript
-if (isDone) {
-    console.log("Task is completed.");
-} else {
-    console.log("Task is not completed.");
-}
+let message: string = `The color is ${color}`;
+console.log(message); // Output: The color is blue
 ```
 
 ### 2.2. Number
 
-Deklarasi variabel dengan tipe number.
+Tipe `number` digunakan untuk merepresentasikan angka, baik bilangan bulat maupun desimal.
 
 ```typescript
 let decimal: number = 6;
+let hex: number = 0xf00d; // hexadecimal
+let binary: number = 0b1010; // binary
+let octal: number = 0o744; // octal
 ```
 
-**Penjelasan**:
-- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
-- `decimal`: Nama variabel.
-- `number`: Tipe dari variabel `decimal`.
-- `6`: Nilai awal dari variabel `decimal`.
-
-**Penggunaan**:
+**Contoh Penggunaan**:
 ```typescript
-let result = decimal * 2;
-console.log(result); // Output: 12
+let total: number = decimal + hex;
+console.log(total); // Output: 61485
 ```
 
-### 2.3. String
+### 2.3. Boolean
 
-Deklarasi variabel dengan tipe string.
-
-```typescript
-let color: string = "blue";
-```
-
-**Penjelasan**:
-- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
-- `color`: Nama variabel.
-- `string`: Tipe dari variabel `color`.
-- `"blue"`: Nilai awal dari variabel `color`.
-
-**Penggunaan**:
-```typescript
-let message = `The color is ${color}.`;
-console.log(message); // Output: The color is blue.
-```
-
-### 2.4. Array
-
-Deklarasi variabel dengan tipe array yang berisi elemen bertipe number.
-
-```typescript
-let list: number[] = [1, 2, 3];
-```
-
-**Penjelasan**:
-- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
-- `list`: Nama variabel.
-- `number[]`: Tipe dari variabel `list`, menunjukkan bahwa ini adalah array dari angka.
-- `[1, 2, 3]`: Nilai awal dari variabel `list`.
-
-**Penggunaan**:
-```typescript
-for (let i = 0; i < list.length; i++) {
-    console.log(list[i]);
-}
-// Output: 1 2 3
-```
-
-### 2.5. Tuple
-
-Deklarasi variabel dengan tipe tuple yang berisi elemen dengan tipe yang berbeda.
-
-```typescript
-let x: [string, number] = ["hello", 10];
-```
-
-**Penjelasan**:
-- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
-- `x`: Nama variabel.
-- `[string, number]`: Tipe dari variabel `x`, menunjukkan bahwa ini adalah tuple yang berisi `string` di posisi pertama dan `number` di posisi kedua.
-- `["hello", 10]`: Nilai awal dari variabel `x`.
-
-**Penggunaan**:
-```typescript
-console.log(x[0]); // Output: hello
-console.log(x[1]); // Output: 10
-```
-
-### 2.6. Contoh Keseluruhan
-
-Berikut adalah contoh penggunaan semua tipe variabel di atas dalam satu program.
+Tipe `boolean` digunakan untuk merepresentasikan nilai benar (`true`) atau salah (`false`).
 
 ```typescript
 let isDone: boolean = false;
-let decimal: number = 6;
-let color: string = "blue";
-let list: number[] = [1, 2, 3];
-let x: [string, number] = ["hello", 10];
+```
 
+**Contoh Penggunaan**:
+```typescript
 if (isDone) {
     console.log("Task is completed.");
 } else {
     console.log("Task is not completed.");
 }
+```
 
-let result = decimal * 2;
-console.log(result); // Output: 12
+### 2.4. Array
 
-let message = `The color is ${color}.`;
-console.log(message); // Output: The color is blue.
+Tipe `array` digunakan untuk merepresentasikan daftar elemen dengan tipe yang sama.
 
-for (let i = 0; i < list.length; i++) {
-    console.log(list[i]);
+```typescript
+let list: number[] = [1, 2, 3];
+```
+
+**Contoh Penggunaan**:
+```typescript
+for (let i: number = 0; i < list.length; i++) {
+    console.log(list[i]); // Output: 1 2 3
 }
-// Output: 1 2 3
+```
 
+TypeScript juga menyediakan cara alternatif untuk mendeklarasikan array:
+
+```typescript
+let list: Array<number> = [1, 2, 3];
+```
+
+### 2.5. Tuple
+
+Tipe `tuple` digunakan untuk merepresentasikan array dengan elemen-elemen yang memiliki tipe berbeda.
+
+```typescript
+let x: [string, number] = ["hello", 10];
+```
+
+**Contoh Penggunaan**:
+```typescript
 console.log(x[0]); // Output: hello
 console.log(x[1]); // Output: 10
 ```
 
-### 2.7. Kesimpulan
+### 2.6. Enum
 
-- **Boolean**: Digunakan untuk nilai `true` atau `false`.
-- **Number**: Digunakan untuk angka, baik bilangan bulat maupun desimal.
-- **String**: Digunakan untuk teks.
-- **Array**: Digunakan untuk daftar elemen dengan tipe yang sama.
-- **Tuple**: Digunakan untuk daftar elemen dengan tipe yang berbeda.
+Tipe `enum` digunakan untuk mendefinisikan sekumpulan nama konstanta.
 
-Dengan mendefinisikan tipe variabel, TypeScript membantu dalam menangkap kesalahan lebih awal dalam proses pengembangan dan meningkatkan keandalan serta keterbacaan kode Anda.
+```typescript
+enum Color { Red, Green, Blue }
+let c: Color = Color.Green;
+```
+
+**Contoh Penggunaan**:
+```typescript
+enum Color { Red = 1, Green, Blue }
+let colorName: string = Color[2];
+console.log(colorName); // Output: Green
+```
+
+### 2.7. Any
+
+Tipe `any` digunakan ketika Anda tidak tahu tipe data apa yang akan digunakan. Ini berguna untuk migrasi dari JavaScript atau untuk bekerja dengan data dinamis.
+
+```typescript
+let notSure: any = 4;
+notSure = "maybe a string instead";
+notSure = false; // okay, definitely a boolean
+```
+
+**Contoh Penggunaan**:
+```typescript
+let list: any[] = [1, true, "free"];
+list[1] = 100;
+console.log(list); // Output: [1, 100, "free"]
+```
+
+### 2.8. Void
+
+Tipe `void` digunakan untuk merepresentasikan ketiadaan tipe, sering digunakan sebagai tipe kembalian fungsi yang tidak mengembalikan nilai.
+
+```typescript
+function warnUser(): void {
+    console.log("This is a warning message");
+}
+```
+
+**Contoh Penggunaan**:
+```typescript
+warnUser(); // Output: This is a warning message
+```
+
+### 2.9. Null dan Undefined
+
+TypeScript memiliki tipe `null` dan `undefined` yang merupakan subtipe dari semua tipe lainnya.
+
+```typescript
+let u: undefined = undefined;
+let n: null = null;
+```
+
+### 2.10. Never
+
+Tipe `never` digunakan untuk tipe yang tidak pernah memiliki nilai. Ini sering digunakan pada fungsi yang selalu melemparkan pengecualian atau tidak pernah mengembalikan nilai.
+
+```typescript
+function error(message: string): never {
+    throw new Error(message);
+}
+```
+
+### 2.11. Kesimpulan
+
+Dengan menggunakan tipe data dasar di TypeScript, Anda bisa:
+- Meningkatkan keandalan kode dengan memastikan nilai sesuai dengan tipe yang diharapkan.
+- Meningkatkan keterbacaan kode dengan memberikan informasi tipe yang eksplisit.
+- Menangkap kesalahan lebih awal dalam proses pengembangan melalui pemeriksaan tipe.
+
+Mendeklarasikan tipe data secara eksplisit di TypeScript membantu dalam pencegahan kesalahan yang sulit ditemukan dan memungkinkan pengembangan kode yang lebih terstruktur dan teratur.
 
 ### 3. Fungsi
 TypeScript mendukung tipe untuk parameter fungsi dan nilai kembaliannya.
