@@ -42,6 +42,154 @@ let color: string = "blue";
 let list: number[] = [1, 2, 3];
 let x: [string, number] = ["hello", 10]; // Tuple
 ```
+Deklarasi variabel di TypeScript memungkinkan Anda untuk mendefinisikan tipe variabel secara eksplisit, yang meningkatkan keandalan dan keterbacaan kode. Berikut adalah penjelasan detail tentang berbagai tipe variabel yang didukung oleh TypeScript beserta contoh penggunaannya.
+
+### 2.1. Boolean
+
+Deklarasi variabel dengan tipe boolean.
+
+```typescript
+let isDone: boolean = false;
+```
+
+**Penjelasan**:
+- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok (block scope).
+- `isDone`: Nama variabel.
+- `boolean`: Tipe dari variabel `isDone`.
+- `false`: Nilai awal dari variabel `isDone`.
+
+**Penggunaan**:
+```typescript
+if (isDone) {
+    console.log("Task is completed.");
+} else {
+    console.log("Task is not completed.");
+}
+```
+
+### 2.2. Number
+
+Deklarasi variabel dengan tipe number.
+
+```typescript
+let decimal: number = 6;
+```
+
+**Penjelasan**:
+- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
+- `decimal`: Nama variabel.
+- `number`: Tipe dari variabel `decimal`.
+- `6`: Nilai awal dari variabel `decimal`.
+
+**Penggunaan**:
+```typescript
+let result = decimal * 2;
+console.log(result); // Output: 12
+```
+
+### 2.3. String
+
+Deklarasi variabel dengan tipe string.
+
+```typescript
+let color: string = "blue";
+```
+
+**Penjelasan**:
+- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
+- `color`: Nama variabel.
+- `string`: Tipe dari variabel `color`.
+- `"blue"`: Nilai awal dari variabel `color`.
+
+**Penggunaan**:
+```typescript
+let message = `The color is ${color}.`;
+console.log(message); // Output: The color is blue.
+```
+
+### 2.4. Array
+
+Deklarasi variabel dengan tipe array yang berisi elemen bertipe number.
+
+```typescript
+let list: number[] = [1, 2, 3];
+```
+
+**Penjelasan**:
+- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
+- `list`: Nama variabel.
+- `number[]`: Tipe dari variabel `list`, menunjukkan bahwa ini adalah array dari angka.
+- `[1, 2, 3]`: Nilai awal dari variabel `list`.
+
+**Penggunaan**:
+```typescript
+for (let i = 0; i < list.length; i++) {
+    console.log(list[i]);
+}
+// Output: 1 2 3
+```
+
+### 2.5. Tuple
+
+Deklarasi variabel dengan tipe tuple yang berisi elemen dengan tipe yang berbeda.
+
+```typescript
+let x: [string, number] = ["hello", 10];
+```
+
+**Penjelasan**:
+- `let`: Kata kunci untuk mendeklarasikan variabel dengan cakupan blok.
+- `x`: Nama variabel.
+- `[string, number]`: Tipe dari variabel `x`, menunjukkan bahwa ini adalah tuple yang berisi `string` di posisi pertama dan `number` di posisi kedua.
+- `["hello", 10]`: Nilai awal dari variabel `x`.
+
+**Penggunaan**:
+```typescript
+console.log(x[0]); // Output: hello
+console.log(x[1]); // Output: 10
+```
+
+### 2.6. Contoh Keseluruhan
+
+Berikut adalah contoh penggunaan semua tipe variabel di atas dalam satu program.
+
+```typescript
+let isDone: boolean = false;
+let decimal: number = 6;
+let color: string = "blue";
+let list: number[] = [1, 2, 3];
+let x: [string, number] = ["hello", 10];
+
+if (isDone) {
+    console.log("Task is completed.");
+} else {
+    console.log("Task is not completed.");
+}
+
+let result = decimal * 2;
+console.log(result); // Output: 12
+
+let message = `The color is ${color}.`;
+console.log(message); // Output: The color is blue.
+
+for (let i = 0; i < list.length; i++) {
+    console.log(list[i]);
+}
+// Output: 1 2 3
+
+console.log(x[0]); // Output: hello
+console.log(x[1]); // Output: 10
+```
+
+### 2.7. Kesimpulan
+
+- **Boolean**: Digunakan untuk nilai `true` atau `false`.
+- **Number**: Digunakan untuk angka, baik bilangan bulat maupun desimal.
+- **String**: Digunakan untuk teks.
+- **Array**: Digunakan untuk daftar elemen dengan tipe yang sama.
+- **Tuple**: Digunakan untuk daftar elemen dengan tipe yang berbeda.
+
+Dengan mendefinisikan tipe variabel, TypeScript membantu dalam menangkap kesalahan lebih awal dalam proses pengembangan dan meningkatkan keandalan serta keterbacaan kode Anda.
 
 ### 3. Fungsi
 TypeScript mendukung tipe untuk parameter fungsi dan nilai kembaliannya.
