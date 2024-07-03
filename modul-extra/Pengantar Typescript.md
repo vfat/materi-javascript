@@ -695,16 +695,126 @@ bird.move(20); // Output: Bird flew 20 meters.
 Dengan menggunakan konsep-konsep ini, TypeScript memungkinkan pembuatan kode yang lebih terstruktur, modular, dan mudah di-maintain.
 
 ### 2. Generic
-Generic memungkinkan Anda membuat komponen yang dapat bekerja dengan berbagai tipe data.
+
+
+**Generic** di TypeScript memungkinkan kita untuk membuat komponen yang dapat bekerja dengan berbagai tipe data. Ini memberikan fleksibilitas dalam pembuatan fungsi, kelas, atau interface yang dapat menangani tipe data yang berbeda tanpa kehilangan tipe informasi.
+
+#### 2.1. Konsep Dasar Generic
+
+Generic memungkinkan pembuatan komponen yang dapat bekerja dengan tipe data yang ditentukan saat pemanggilan, bukan pada saat definisi. Ini sangat berguna saat kita ingin membuat fungsi atau kelas yang dapat bekerja dengan berbagai tipe data tetapi tetap memiliki keamanan tipe.
+
+#### 2.2. Fungsi Generic
+
+Mari kita lihat contoh fungsi generic:
 
 ```typescript
 function identity<T>(arg: T): T {
     return arg;
 }
-
-let output = identity<string>("myString");
-let outputNumber = identity<number>(100);
 ```
+
+- `identity` adalah fungsi generic.
+- `T` adalah parameter tipe generic. Ini adalah placeholder untuk tipe data yang akan kita gunakan.
+- `arg: T` berarti argumen `arg` akan memiliki tipe `T`.
+- `: T` setelah tanda kurung menandakan bahwa fungsi ini akan mengembalikan nilai dengan tipe `T`.
+
+Contoh penggunaan:
+
+```typescript
+let outputString = identity<string>("myString"); // `outputString` akan bertipe `string`
+let outputNumber = identity<number>(100); // `outputNumber` akan bertipe `number`
+```
+
+#### 2.3. Contoh Lebih Lanjut
+
+1. **Array Generic**
+
+   Fungsi generic dapat digunakan untuk bekerja dengan array berbagai tipe data.
+
+   ```typescript
+   function getArray<T>(items: T[]): T[] {
+       return new Array<T>().concat(items);
+   }
+
+   let stringArray = getArray<string>(["Hello", "World"]);
+   let numberArray = getArray<number>([1, 2, 3, 4]);
+
+   stringArray.push("!");
+   numberArray.push(5);
+
+   console.log(stringArray); // Output: ["Hello", "World", "!"]
+   console.log(numberArray); // Output: [1, 2, 3, 4, 5]
+   ```
+
+2. **Generic Interface**
+
+   Kita juga dapat menggunakan generic dalam interface.
+
+   ```typescript
+   interface KeyValuePair<K, V> {
+       key: K;
+       value: V;
+   }
+
+   let keyValue: KeyValuePair<number, string> = { key: 1, value: "Hello" };
+
+   console.log(keyValue); // Output: { key: 1, value: "Hello" }
+   ```
+
+3. **Generic Class**
+
+   Kita bisa membuat kelas yang menggunakan generic untuk bekerja dengan berbagai tipe data.
+
+   ```typescript
+   class DataHolder<T> {
+       private _data: T;
+
+       constructor(data: T) {
+           this._data = data;
+       }
+
+       getData(): T {
+           return this._data;
+       }
+
+       setData(data: T): void {
+           this._data = data;
+       }
+   }
+
+   let stringHolder = new DataHolder<string>("Hello");
+   console.log(stringHolder.getData()); // Output: Hello
+
+   stringHolder.setData("World");
+   console.log(stringHolder.getData()); // Output: World
+
+   let numberHolder = new DataHolder<number>(123);
+   console.log(numberHolder.getData()); // Output: 123
+
+   numberHolder.setData(456);
+   console.log(numberHolder.getData()); // Output: 456
+   ```
+
+4. **Generic Constraints**
+
+   Terkadang kita ingin memaksakan batasan pada tipe data yang dapat digunakan dalam generic. Ini bisa dilakukan dengan menggunakan constraints.
+
+   ```typescript
+   interface Lengthwise {
+       length: number;
+   }
+
+   function loggingIdentity<T extends Lengthwise>(arg: T): T {
+       console.log(arg.length); // Sekarang kita tahu bahwa 'arg' pasti memiliki properti 'length'
+       return arg;
+   }
+
+   loggingIdentity({ length: 10, value: "Hello" }); // Output: 10
+   ```
+
+#### 2.4. Kesimpulan
+
+Generic adalah fitur powerful di TypeScript yang memungkinkan pembuatan komponen yang fleksibel dan reusable dengan tetap menjaga keamanan tipe. Dengan generic, kita dapat membuat fungsi, kelas, dan interface yang dapat bekerja dengan berbagai tipe data tanpa mengorbankan keamanan dan kejelasan kode.
 
 ### 3. Modul dan Namespace
 TypeScript mendukung modul dan namespace untuk pengorganisasian kode yang lebih baik.
