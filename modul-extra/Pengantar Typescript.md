@@ -817,30 +817,140 @@ let outputNumber = identity<number>(100); // `outputNumber` akan bertipe `number
 Generic adalah fitur powerful di TypeScript yang memungkinkan pembuatan komponen yang fleksibel dan reusable dengan tetap menjaga keamanan tipe. Dengan generic, kita dapat membuat fungsi, kelas, dan interface yang dapat bekerja dengan berbagai tipe data tanpa mengorbankan keamanan dan kejelasan kode.
 
 ### 3. Modul dan Namespace
-TypeScript mendukung modul dan namespace untuk pengorganisasian kode yang lebih baik.
 
-**Modul:**
+
+**Modul** dan **Namespace** adalah fitur di TypeScript yang digunakan untuk mengorganisasikan dan mengelola kode, terutama dalam proyek besar. Mereka memiliki fungsi dan tujuan yang berbeda.
+
+#### 3.1. Modul
+
+**Modul** adalah unit kode yang dapat diimpor atau diekspor dari satu file ke file lain. Modul membantu dalam pengorganisasian dan pembagian kode menjadi potongan-potongan kecil yang dapat digunakan kembali.
+
+- **Ekspor**: Menentukan bagian dari modul yang dapat diakses oleh modul lain.
+- **Impor**: Mengambil fitur dari modul lain ke dalam modul saat ini.
+
+##### Contoh Modul
+
+**module1.ts**
 ```typescript
-// math.ts
-export function add(x: number, y: number): number {
-    return x + y;
-}
-
-// app.ts
-import { add } from "./math";
-console.log(add(2, 3));
-```
-
-**Namespace:**
-```typescript
-namespace Geometry {
-    export function area(radius: number): number {
-        return Math.PI * radius * radius;
+export class Greeter {
+    constructor(public greeting: string) {}
+    greet() {
+        return `Hello, ${this.greeting}`;
     }
 }
 
-console.log(Geometry.area(10));
+export function add(x: number, y: number): number {
+    return x + y;
+}
 ```
+
+**module2.ts**
+```typescript
+import { Greeter, add } from './module1';
+
+let greeter = new Greeter("world");
+console.log(greeter.greet()); // Output: Hello, world
+
+let sum = add(2, 3);
+console.log(sum); // Output: 5
+```
+
+- `export` digunakan untuk mengekspor kelas `Greeter` dan fungsi `add` dari `module1.ts`.
+- `import` digunakan untuk mengimpor `Greeter` dan `add` ke dalam `module2.ts`.
+
+##### Ekspor Default
+
+Kita juga dapat menggunakan ekspor default untuk mengekspor satu nilai dari sebuah modul:
+
+**module3.ts**
+```typescript
+export default function multiply(x: number, y: number): number {
+    return x * y;
+}
+```
+
+**module4.ts**
+```typescript
+import multiply from './module3';
+
+let product = multiply(2, 3);
+console.log(product); // Output: 6
+```
+
+Dalam kasus ini, `multiply` adalah ekspor default dari `module3.ts`, dan kita dapat mengimpornya tanpa menggunakan tanda kurung kurawal.
+
+#### 3.2. Namespace
+
+**Namespace** adalah cara lama untuk mengelompokkan logika yang terkait bersama-sama dalam satu ruang nama. Mereka digunakan sebelum sistem modul ECMAScript 2015 (ES6) menjadi standar. Namespace masih berguna untuk beberapa kasus penggunaan, terutama saat mengorganisasikan kode di dalam satu file atau ketika tidak menggunakan loader modul.
+
+##### Contoh Namespace
+
+**shapes.ts**
+```typescript
+namespace Shapes {
+    export class Circle {
+        constructor(public radius: number) {}
+        area(): number {
+            return Math.PI * this.radius * this.radius;
+        }
+    }
+
+    export class Square {
+        constructor(public sideLength: number) {}
+        area(): number {
+            return this.sideLength * this.sideLength;
+        }
+    }
+}
+
+let circle = new Shapes.Circle(10);
+console.log(circle.area()); // Output: 314.159...
+
+let square = new Shapes.Square(5);
+console.log(square.area()); // Output: 25
+```
+
+- `namespace` digunakan untuk mendeklarasikan ruang nama `Shapes`.
+- `export` digunakan untuk membuat kelas `Circle` dan `Square` dapat diakses di luar namespace.
+
+##### Namespace Bersarang
+
+Namespace dapat bersarang untuk pengorganisasian yang lebih baik.
+
+**geometry.ts**
+```typescript
+namespace Geometry {
+    export namespace Shapes {
+        export class Triangle {
+            constructor(public base: number, public height: number) {}
+            area(): number {
+                return 0.5 * this.base * this.height;
+            }
+        }
+    }
+}
+
+let triangle = new Geometry.Shapes.Triangle(5, 10);
+console.log(triangle.area()); // Output: 25
+```
+
+#### 3.3. Perbandingan Modul dan Namespace
+
+- **Modul**:
+  - Lebih modern dan digunakan di TypeScript dan JavaScript saat ini.
+  - Menggunakan ekspor dan impor untuk berbagi kode antara file.
+  - Mendukung sistem modul ES6 dan kompatibel dengan bundler seperti Webpack dan Rollup.
+
+- **Namespace**:
+  - Lebih tradisional dan digunakan sebelum sistem modul ES6.
+  - Digunakan untuk mengelompokkan kode di dalam satu file.
+  - Tidak memerlukan bundler, cocok untuk proyek yang tidak menggunakan sistem modul.
+
+### 3.4. Kesimpulan
+
+- **Modul** digunakan untuk mengorganisasikan dan membagi kode ke dalam file yang dapat diimpor dan diekspor.
+- **Namespace** digunakan untuk mengelompokkan kode terkait dalam satu ruang nama, seringkali di dalam satu file.
+- Modul lebih modern dan umum digunakan dalam pengembangan aplikasi besar yang menggunakan bundler modul, sementara namespace masih berguna dalam beberapa kasus tertentu di mana bundler tidak digunakan atau untuk pengorganisasian kode dalam satu file.
 
 ### 4. Decorator
 Decorator adalah fitur eksperimental yang digunakan untuk mengubah perilaku kelas atau anggota kelas.
