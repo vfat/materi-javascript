@@ -953,7 +953,31 @@ console.log(triangle.area()); // Output: 25
 - Modul lebih modern dan umum digunakan dalam pengembangan aplikasi besar yang menggunakan bundler modul, sementara namespace masih berguna dalam beberapa kasus tertentu di mana bundler tidak digunakan atau untuk pengorganisasian kode dalam satu file.
 
 ### 4. Decorator
-Decorator adalah fitur eksperimental yang digunakan untuk mengubah perilaku kelas atau anggota kelas.
+### Decorator di TypeScript
+
+**Decorator** adalah fitur eksperimental di TypeScript yang digunakan untuk memodifikasi perilaku kelas, metode, properti, atau parameter. Decorator menyediakan cara yang elegan untuk menambahkan logika tambahan ke dalam kelas dan anggota kelas dengan cara yang deklaratif.
+
+#### Apa Itu Decorator?
+
+Decorator adalah fungsi yang diterapkan pada kelas atau anggota kelas (seperti metode, properti, atau parameter) untuk memodifikasi atau memperluas perilaku mereka. Decorator ditandai dengan simbol `@` diikuti dengan nama fungsi decorator.
+
+#### Jenis-Jenis Decorator
+
+Ada beberapa jenis decorator yang dapat digunakan di TypeScript:
+
+1. **Class Decorator**: Diterapkan pada kelas.
+2. **Method Decorator**: Diterapkan pada metode kelas.
+3. **Accessor Decorator**: Diterapkan pada getter atau setter properti kelas.
+4. **Property Decorator**: Diterapkan pada properti kelas.
+5. **Parameter Decorator**: Diterapkan pada parameter metode kelas.
+
+#### Class Decorator
+
+Class decorator diterapkan pada deklarasi kelas dan digunakan untuk memodifikasi atau memperluas kelas tersebut.
+
+##### Contoh Class Decorator
+
+Mari kita lihat contoh penggunaan class decorator `sealed`:
 
 ```typescript
 function sealed(constructor: Function) {
@@ -971,6 +995,88 @@ class Greeter {
 }
 ```
 
+Dalam contoh ini:
+- `sealed` adalah fungsi decorator yang menerima parameter `constructor` (konstruktor dari kelas yang didekorasi).
+- `Object.seal` digunakan untuk menyegel konstruktor dan prototipe kelas, mencegah penambahan properti baru.
+
+Decorator `@sealed` diterapkan pada kelas `Greeter`, sehingga kelas dan prototipenya disegel.
+
+#### Method Decorator
+
+Method decorator diterapkan pada metode kelas dan digunakan untuk memodifikasi atau memperluas perilaku metode tersebut.
+
+##### Contoh Method Decorator
+
+Mari kita lihat contoh method decorator `log`:
+
+```typescript
+function log(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = function (...args: any[]) {
+        console.log(`Calling ${propertyName} with arguments:`, args);
+        const result = originalMethod.apply(this, args);
+        console.log(`Result of ${propertyName}:`, result);
+        return result;
+    };
+
+    return descriptor;
+}
+
+class Calculator {
+    @log
+    add(a: number, b: number): number {
+        return a + b;
+    }
+}
+
+const calculator = new Calculator();
+calculator.add(2, 3); // Output: Calling add with arguments: [2, 3]
+                      // Result of add: 5
+```
+
+Dalam contoh ini:
+- `log` adalah method decorator yang menerima tiga parameter: `target` (prototipe kelas), `propertyName` (nama metode), dan `descriptor` (deskriptor properti).
+- Decorator `@log` diterapkan pada metode `add` dari kelas `Calculator`. Decorator ini mencatat panggilan metode dan hasilnya.
+
+#### Property Decorator
+
+Property decorator diterapkan pada properti kelas dan digunakan untuk memodifikasi atau memperluas properti tersebut.
+
+##### Contoh Property Decorator
+
+Mari kita lihat contoh property decorator `readonly`:
+
+```typescript
+function readonly(target: any, propertyKey: string) {
+    Object.defineProperty(target, propertyKey, {
+        writable: false
+    });
+}
+
+class Person {
+    @readonly
+    name: string = "John Doe";
+}
+
+const person = new Person();
+person.name = "Jane Doe"; // Error: Cannot assign to read-only property 'name'
+```
+
+Dalam contoh ini:
+- `readonly` adalah property decorator yang menerima dua parameter: `target` (prototipe kelas) dan `propertyKey` (nama properti).
+- Decorator `@readonly` diterapkan pada properti `name` dari kelas `Person`, menjadikan properti tersebut bersifat read-only.
+
+#### Kesimpulan
+
+Decorator di TypeScript adalah alat yang kuat untuk memodifikasi atau memperluas perilaku kelas dan anggota kelas secara deklaratif. Dengan menggunakan decorator, kita dapat menambahkan logika tambahan dengan cara yang lebih modular dan dapat digunakan kembali.
+
+- **Class Decorator**: Digunakan untuk memodifikasi atau memperluas kelas.
+- **Method Decorator**: Digunakan untuk memodifikasi atau memperluas metode kelas.
+- **Property Decorator**: Digunakan untuk memodifikasi atau memperluas properti kelas.
+- **Parameter Decorator**: Digunakan untuk memodifikasi atau memperluas parameter metode kelas.
+
+Decorator memungkinkan pengembangan kode yang lebih bersih dan terorganisir, serta memudahkan dalam penambahan fitur tambahan tanpa mengubah kode asli.
 ## Bagian 4: TypeScript Mahir
 ### 1. Advanced Types
 TypeScript menyediakan tipe-tipe lanjutan seperti intersection types, union types, type guards, dan banyak lagi.
