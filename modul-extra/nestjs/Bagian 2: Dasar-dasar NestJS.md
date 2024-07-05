@@ -390,3 +390,87 @@ Pada bagian ini, kita akan membuat proyek NestJS sederhana dan menyiapkan CRUD d
 ---
 
 Dengan mengikuti langkah-langkah di atas, Anda telah membuat proyek NestJS sederhana dengan CRUD dasar untuk entitas `Cats` dan mengujinya menggunakan Postman atau Thunder Client. Ini memberikan dasar yang kuat untuk melanjutkan ke bagian yang lebih kompleks dalam NestJS.
+
+
+---
+EXTRAS
+---
+
+Untuk membuat route seperti `http://localhost:3000/cats/umur/:umur/warna/:warna` di NestJS, Anda bisa mengikuti langkah-langkah berikut:
+
+1. **Buat Module dan Controller**:
+   - Pertama, buat module dan controller untuk `cats`. 
+   - Anda bisa melakukannya secara manual atau menggunakan CLI NestJS untuk menghasilkan boilerplate kode.
+
+2. **Deklarasikan Route di Controller**:
+   - Di dalam controller, deklarasikan metode dengan dekorator `@Get()` yang sesuai dengan route yang diinginkan.
+
+Berikut adalah contoh langkah-langkahnya:
+
+### Langkah 1: Buat Module dan Controller
+Anda dapat menggunakan CLI NestJS untuk membuat module dan controller:
+
+```bash
+nest generate module cats
+nest generate controller cats
+```
+
+### Langkah 2: Definisikan Route di Controller
+
+Edit file `cats.controller.ts` untuk menambahkan route yang diinginkan:
+
+```typescript
+import { Controller, Get, Param } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Get('umur/:umur/warna/:warna')
+  findCatsByUmurAndWarna(@Param('umur') umur: string, @Param('warna') warna: string) {
+    return `Cats with umur: ${umur} and warna: ${warna}`;
+  }
+}
+```
+
+### Penjelasan:
+- `@Controller('cats')`: Menentukan prefix `cats` untuk semua route di controller ini.
+- `@Get('umur/:umur/warna/:warna')`: Menentukan route GET yang akan menangkap parameter `umur` dan `warna`.
+- `@Param('umur') umur: string`: Mengambil nilai parameter `umur` dari URL.
+- `@Param('warna') warna: string`: Mengambil nilai parameter `warna` dari URL.
+
+### Langkah 3: Registrasikan Module
+Pastikan module `CatsModule` diimport di dalam `AppModule`:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { CatsModule } from './cats/cats.module';
+
+@Module({
+  imports: [CatsModule],
+})
+export class AppModule {}
+```
+
+### Langkah 4: Jalankan Aplikasi
+Jalankan aplikasi dengan perintah:
+
+```bash
+npm run start
+```
+
+Sekarang, Anda bisa mengakses route `http://localhost:3000/cats/umur/:umur/warna/:warna` dan melihat output yang sesuai.
+
+### Struktur Proyek
+Setelah mengikuti langkah-langkah di atas, struktur proyek Anda akan terlihat seperti ini:
+
+```
+src/
+│
+├── cats/
+│   ├── cats.controller.ts
+│   ├── cats.module.ts
+│
+├── app.module.ts
+├── main.ts
+```
+
+Dengan langkah-langkah ini, Anda akan dapat membuat route dinamis di NestJS yang menangkap parameter dari URL.
