@@ -9,8 +9,8 @@ Controllers adalah kelas yang bertanggung jawab untuk menangani permintaan dari 
 Pertama, buat proyek baru jika belum dibuat:
 
 ```bash
-nest new my-nest-project
-cd my-nest-project
+nest new bagian-dua-project
+cd bagian-dua-project
 ```
 
 Kemudian buat module, service, dan controller untuk entitas `cats`:
