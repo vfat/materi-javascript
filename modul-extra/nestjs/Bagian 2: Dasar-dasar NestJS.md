@@ -203,43 +203,190 @@ export class CatsController {
 
 - `@Body()`: Mendekorasi parameter untuk menerima data dari body request dan memvalidasinya menggunakan DTO.
 
-#### Menjalankan Aplikasi dan Menguji dengan Postman atau Thunder Client
+#### Praktik
 
-**Menjalankan Aplikasi:**
+### Bagian 1 dan 2: Pengantar dan Dasar-dasar NestJS
 
-```bash
-npm run start
-```
+Pada bagian ini, kita akan membuat proyek NestJS sederhana dan menyiapkan CRUD dasar. Kami juga akan membahas bagaimana menguji endpoint menggunakan Postman atau Thunder Client.
 
-**Menggunakan Postman atau Thunder Client:**
+#### Bagian 1: Pengantar NestJS
 
-- **POST** untuk membuat kucing:
-  - URL: `http://localhost:3000/cats`
-  - Body (JSON):
-    ```json
-    {
-      "name": "Whiskers",
-      "age": 3,
-      "breed": "Siamese"
-    }
-    ```
+1. **Instalasi NestJS CLI:**
 
-- **GET** untuk mendapatkan semua kucing:
-  - URL: `http://localhost:3000/cats`
+   Pertama, pastikan Anda memiliki Node.js dan npm terinstal di sistem Anda. Instal NestJS CLI secara global:
 
-- **GET** untuk mendapatkan kucing berdasarkan ID:
-  - URL: `http://localhost:3000/cats/1`
+   ```bash
+   npm install -g @nestjs/cli
+   ```
 
-- **PUT** untuk memperbarui kucing:
-  - URL: `http://localhost:3000/cats/1`
-  - Body (JSON):
-    ```json
-    {
-      "age": 4
-    }
-    ```
+2. **Membuat Proyek Baru:**
 
-- **DELETE** untuk menghapus kucing:
-  - URL: `http://localhost:3000/cats/1`
+   Buat proyek NestJS baru:
+
+   ```bash
+   nest new my-nest-project
+   ```
+
+   Ikuti petunjuk untuk memilih manajer paket yang ingin Anda gunakan (npm atau yarn).
+
+3. **Menjalankan Proyek:**
+
+   Setelah proyek dibuat, navigasikan ke direktori proyek dan jalankan aplikasi:
+
+   ```bash
+   cd my-nest-project
+   npm run start
+   ```
+
+   Aplikasi Anda sekarang berjalan di `http://localhost:3000`.
+
+#### Bagian 2: Dasar-dasar NestJS
+
+1. **Membuat Modul, Controller, dan Service:**
+
+   Kami akan membuat modul, controller, dan service untuk entitas `Cats`.
+
+   **Membuat Modul Kucing:**
+
+   ```bash
+   nest generate module cats
+   ```
+
+   **Membuat Controller Kucing:**
+
+   ```bash
+   nest generate controller cats
+   ```
+
+   **Membuat Service Kucing:**
+
+   ```bash
+   nest generate service cats
+   ```
+
+2. **Mengimplementasikan Service dan Controller:**
+
+   **cats.service.ts:**
+
+   ```typescript
+   import { Injectable } from '@nestjs/common';
+
+   export interface Cat {
+     id: number;
+     name: string;
+     age: number;
+     breed: string;
+   }
+
+   @Injectable()
+   export class CatsService {
+     private readonly cats: Cat[] = [];
+
+     create(cat: Cat) {
+       this.cats.push(cat);
+     }
+
+     findAll(): Cat[] {
+       return this.cats;
+     }
+
+     findOne(id: number): Cat {
+       return this.cats.find(cat => cat.id === id);
+     }
+
+     update(id: number, updateCatDto: Partial<Cat>) {
+       const catIndex = this.cats.findIndex(cat => cat.id === id);
+       if (catIndex !== -1) {
+         this.cats[catIndex] = { ...this.cats[catIndex], ...updateCatDto };
+       }
+     }
+
+     remove(id: number) {
+       const catIndex = this.cats.findIndex(cat => cat.id === id);
+       if (catIndex !== -1) {
+         this.cats.splice(catIndex, 1);
+       }
+     }
+   }
+   ```
+
+   **cats.controller.ts:**
+
+   ```typescript
+   import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+   import { CatsService, Cat } from './cats.service';
+
+   @Controller('cats')
+   export class CatsController {
+     constructor(private readonly catsService: CatsService) {}
+
+     @Post()
+     create(@Body() createCatDto: Cat) {
+       this.catsService.create(createCatDto);
+     }
+
+     @Get()
+     findAll(): Cat[] {
+       return this.catsService.findAll();
+     }
+
+     @Get(':id')
+     findOne(@Param('id') id: number): Cat {
+       return this.catsService.findOne(id);
+     }
+
+     @Put(':id')
+     update(@Param('id') id: number, @Body() updateCatDto: Partial<Cat>) {
+       this.catsService.update(id, updateCatDto);
+     }
+
+     @Delete(':id')
+     remove(@Param('id') id: number) {
+       this.catsService.remove(id);
+     }
+   }
+   ```
+
+3. **Menjalankan Aplikasi dan Menguji dengan Postman atau Thunder Client:**
+
+   **Menjalankan Aplikasi:**
+
+   ```bash
+   npm run start
+   ```
+
+   **Menggunakan Postman atau Thunder Client:**
+
+   - **POST** untuk membuat kucing:
+     - URL: `http://localhost:3000/cats`
+     - Body (JSON):
+       ```json
+       {
+         "id": 1,
+         "name": "Whiskers",
+         "age": 3,
+         "breed": "Siamese"
+       }
+       ```
+
+   - **GET** untuk mendapatkan semua kucing:
+     - URL: `http://localhost:3000/cats`
+
+   - **GET** untuk mendapatkan kucing berdasarkan ID:
+     - URL: `http://localhost:3000/cats/1`
+
+   - **PUT** untuk memperbarui kucing:
+     - URL: `http://localhost:3000/cats/1`
+     - Body (JSON):
+       ```json
+       {
+         "age": 4
+       }
+       ```
+
+   - **DELETE** untuk menghapus kucing:
+     - URL: `http://localhost:3000/cats/1`
+
+---
 
 Dengan mengikuti langkah-langkah di atas, Anda telah membuat proyek NestJS sederhana dengan CRUD dasar untuk entitas `Cats` dan mengujinya menggunakan Postman atau Thunder Client. Ini memberikan dasar yang kuat untuk melanjutkan ke bagian yang lebih kompleks dalam NestJS.
