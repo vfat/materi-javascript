@@ -291,18 +291,18 @@ Pada bagian ini, kita akan membuat proyek NestJS sederhana dan menyiapkan CRUD d
      }
 
      findOne(id: number): Cat {
-       return this.cats.find(cat => cat.id === id);
+       return this.cats.find(cat => cat.id == id);
      }
 
      update(id: number, updateCatDto: Partial<Cat>) {
-       const catIndex = this.cats.findIndex(cat => cat.id === id);
+       const catIndex = this.cats.findIndex(cat => cat.id == id);
        if (catIndex !== -1) {
          this.cats[catIndex] = { ...this.cats[catIndex], ...updateCatDto };
        }
      }
 
      remove(id: number) {
-       const catIndex = this.cats.findIndex(cat => cat.id === id);
+       const catIndex = this.cats.findIndex(cat => cat.id == id);
        if (catIndex !== -1) {
          this.cats.splice(catIndex, 1);
        }
