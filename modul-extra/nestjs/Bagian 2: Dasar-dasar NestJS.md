@@ -474,3 +474,248 @@ src/
 ```
 
 Dengan langkah-langkah ini, Anda akan dapat membuat route dinamis di NestJS yang menangkap parameter dari URL.
+
+---
+Melakukan formating pada response
+---
+
+Untuk memastikan setiap respons dari controller memiliki format yang diinginkan, kita perlu menyesuaikan controller agar membungkus hasil dari service ke dalam objek dengan format yang sesuai.
+
+Berikut adalah revisi dari file `cats.controller.ts` untuk memenuhi kebutuhan tersebut:
+
+### File `cats.controller.ts`
+
+```typescript
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpException, HttpStatus } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+
+@Controller('cats')
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Post()
+  create(@Body() createCatDto: Cat) {
+    try {
+      this.catsService.create(createCatDto);
+      return {
+        message: 'Cat created successfully',
+        success: true,
+        data: createCatDto,
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to create cat',
+        success: false,
+        data: error.message,
+      };
+    }
+  }
+
+  @Get()
+  findAll() {
+    try {
+      const cats = this.catsService.findAll();
+      return {
+        message: 'Cats retrieved successfully',
+        success: true,
+        data: cats,
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to retrieve cats',
+        success: false,
+        data: error.message,
+      };
+    }
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: number) {
+    try {
+      const cat = this.catsService.findOne(id);
+      if (!cat) {
+        throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+      }
+      return {
+        message: 'Cat retrieved successfully',
+        success: true,
+        data: cat,
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to retrieve cat',
+        success: false,
+        data: error.message,
+      };
+    }
+  }
+
+  @Put(':id')
+  update(@Param('id') id: number, @Body() updateCatDto: Partial<Cat>) {
+    try {
+      const cat = this.catsService.findOne(id);
+      if (!cat) {
+        throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+      }
+      this.catsService.update(id, updateCatDto);
+      return {
+        message: 'Cat updated successfully',
+        success: true,
+        data: this.catsService.findOne(id),
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to update cat',
+        success: false,
+        data: error.message,
+      };
+    }
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    try {
+      const cat = this.catsService.findOne(id);
+      if (!cat) {
+        throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+      }
+      this.catsService.remove(id);
+      return {
+        message: 'Cat removed successfully',
+        success: true,
+        data: cat,
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to remove cat',
+        success: false,
+        data: error.message,
+      };
+    }
+  }
+}
+```
+
+### Penjelasan:
+
+1. **Try-Catch Block:** Setiap metode controller dibungkus dalam blok `try-catch` untuk menangkap error dan memastikan respons selalu memiliki format yang diinginkan.
+2. **HttpException:** Digunakan untuk mengirim error spesifik dengan status HTTP yang sesuai, misalnya saat data tidak ditemukan.
+3. **Response Format:** Setiap respons memiliki format:
+   ```json
+   {
+     "message": "Your message here",
+     "success": true/false,
+     "data": your data or error message
+   }
+   ```
+
+### Proses Testing di Postman atau Thunder Client
+
+**1. POST untuk membuat kucing:**
+
+- **URL:** `http://localhost:3000/cats`
+- **Method:** POST
+- **Body (JSON):**
+  ```json
+  {
+    "id": 1,
+    "name": "Whiskers",
+    "age": 3,
+    "breed": "Siamese"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "message": "Cat created successfully",
+    "success": true,
+    "data": {
+      "id": 1,
+      "name": "Whiskers",
+      "age": 3,
+      "breed": "Siamese"
+    }
+  }
+  ```
+
+**2. GET untuk mendapatkan semua kucing:**
+
+- **URL:** `http://localhost:3000/cats`
+- **Method:** GET
+- **Response:**
+  ```json
+  {
+    "message": "Cats retrieved successfully",
+    "success": true,
+    "data": [
+      {
+        "id": 1,
+        "name": "Whiskers",
+        "age": 3,
+        "breed": "Siamese"
+      }
+    ]
+  }
+  ```
+
+**3. GET untuk mendapatkan kucing berdasarkan ID:**
+
+- **URL:** `http://localhost:3000/cats/1`
+- **Method:** GET
+- **Response:**
+  ```json
+  {
+    "message": "Cat retrieved successfully",
+    "success": true,
+    "data": {
+      "id": 1,
+      "name": "Whiskers",
+      "age": 3,
+      "breed": "Siamese"
+    }
+  }
+  ```
+
+**4. PUT untuk memperbarui kucing:**
+
+- **URL:** `http://localhost:3000/cats/1`
+- **Method:** PUT
+- **Body (JSON):**
+  ```json
+  {
+    "age": 4
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "message": "Cat updated successfully",
+    "success": true,
+    "data": {
+      "id": 1,
+      "name": "Whiskers",
+      "age": 4,
+      "breed": "Siamese"
+    }
+  }
+  ```
+
+**5. DELETE untuk menghapus kucing:**
+
+- **URL:** `http://localhost:3000/cats/1`
+- **Method:** DELETE
+- **Response:**
+  ```json
+  {
+    "message": "Cat removed successfully",
+    "success": true,
+    "data": {
+      "id": 1,
+      "name": "Whiskers",
+      "age": 3,
+      "breed": "Siamese"
+    }
+  }
+  ```
+
+Dengan mengimplementasikan format respons yang konsisten dan mengikuti langkah-langkah pengujian di Postman atau Thunder Client, Anda dapat memastikan bahwa API Anda memberikan respons yang terstruktur dan mudah dipahami oleh klien.
