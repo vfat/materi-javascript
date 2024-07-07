@@ -1,221 +1,618 @@
-### Bagian 3: Intermediate NestJS
+## Bagian 3: Intermediate NestJS
 
-Setelah memahami dasar-dasar NestJS, kita akan melanjutkan ke konsep-konsep yang lebih mendalam dan fleksibel dalam pembangunan aplikasi. Bagian ini mencakup Middleware, Guards, Interceptors, Filters, dan Pipes.
+Pada bagian ini, kita akan mendalami konsep-konsep lebih lanjut yang akan membantu Anda mengembangkan aplikasi NestJS yang lebih kompleks dan efisien. Berikut adalah beberapa topik yang akan kita bahas:
 
-#### 1. Middleware
-Middleware adalah fungsi yang dieksekusi sebelum handler route. Middleware dapat digunakan untuk berbagai keperluan seperti logging, validasi token, dan autentikasi.
+1. **Middleware**
+2. **Interceptors**
+3. **Guards**
+4. **Pipes**
+5. **Filters**
+6. **Database dengan TypeORM**
 
-**Membuat dan Menggunakan Middleware:**
-Contoh middleware untuk logging:
+### 1. Middleware
 
-```typescript
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+Middleware adalah fungsi yang dieksekusi sebelum request mencapai controller. Middleware dapat digunakan untuk memodifikasi request dan response objects, mengakhiri siklus request-response, atau memanggil middleware berikutnya dalam stack.
 
-@Injectable()
-export class LoggerMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    console.log(`Request...`);
-    next();
-  }
-}
-```
+**Contoh Middleware:**
 
-**Mendaftarkan Middleware:**
+1. **Buat Middleware:**
 
-```typescript
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { LoggerMiddleware } from './logger.middleware';
-import { CatsController } from './cats.controller';
+    Buat file baru `logger.middleware.ts`:
 
-@Module({
-  controllers: [CatsController],
-})
-export class CatsModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes(CatsController);
-  }
-}
-```
+    ```typescript
+    import { Injectable, NestMiddleware } from '@nestjs/common';
+    import { Request, Response, NextFunction } from 'express';
 
-Penjelasan:
-- **configure**: Method yang digunakan untuk mendaftarkan middleware.
-- **consumer.apply(LoggerMiddleware).forRoutes(CatsController)**: Menentukan middleware yang digunakan dan pada route mana middleware diterapkan.
-
-#### 2. Guards
-Guards adalah fungsi yang menentukan apakah suatu route tertentu dapat diakses atau tidak. Guards biasa digunakan untuk otorisasi.
-
-**Membuat dan Menggunakan Guards:**
-Contoh guard untuk otorisasi:
-
-```typescript
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs';
-
-@Injectable()
-export class AuthGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-    return user && user.isAdmin;
-  }
-}
-```
-
-**Menggunakan Guard dalam Controller:**
-
-```typescript
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from './auth.guard';
-
-@Controller('cats')
-export class CatsController {
-  @Get()
-  @UseGuards(AuthGuard)
-  findAll(): string {
-    return 'This action returns all cats';
-  }
-}
-```
-
-Penjelasan:
-- **@UseGuards(AuthGuard)**: Mendekorasi route untuk menggunakan guard.
-
-#### 3. Interceptors
-Interceptors adalah kelas yang memungkinkan Anda untuk meng-intercept request dan response. Ini bisa digunakan untuk modifikasi, logging, atau caching.
-
-**Membuat dan Menggunakan Interceptor:**
-Contoh interceptor untuk logging:
-
-```typescript
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-
-@Injectable()
-export class LoggingInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    console.log('Before...');
-    const now = Date.now();
-    return next
-      .handle()
-      .pipe(tap(() => console.log(`After... ${Date.now() - now}ms`)));
-  }
-}
-```
-
-**Menggunakan Interceptor dalam Controller:**
-
-```typescript
-import { Controller, Get, UseInterceptors } from '@nestjs/common';
-import { LoggingInterceptor } from './logging.interceptor';
-
-@Controller('cats')
-@UseInterceptors(LoggingInterceptor)
-export class CatsController {
-  @Get()
-  findAll(): string {
-    return 'This action returns all cats';
-  }
-}
-```
-
-Penjelasan:
-- **@UseInterceptors(LoggingInterceptor)**: Mendekorasi controller atau metode untuk menggunakan interceptor.
-
-#### 4. Filters
-Filters adalah kelas yang digunakan untuk menangani exception. Filters memungkinkan penanganan error global atau spesifik untuk route tertentu.
-
-**Membuat dan Menggunakan Filter:**
-Contoh filter untuk penanganan error:
-
-```typescript
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
-
-@Catch(HttpException)
-export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
-    const request = ctx.getRequest();
-    const status = exception.getStatus();
-
-    response
-      .status(status)
-      .json({
-        statusCode: status,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      });
-  }
-}
-```
-
-**Menggunakan Filter dalam Controller:**
-
-```typescript
-import { Controller, Get, UseFilters } from '@nestjs/common';
-import { HttpExceptionFilter } from './http-exception.filter';
-
-@Controller('cats')
-@UseFilters(HttpExceptionFilter)
-export class CatsController {
-  @Get()
-  findAll(): string {
-    throw new HttpException('Forbidden', 403);
-  }
-}
-```
-
-Penjelasan:
-- **@UseFilters(HttpExceptionFilter)**: Mendekorasi controller atau metode untuk menggunakan filter.
-
-#### 5. Pipes
-Pipes adalah fungsi yang digunakan untuk transformasi dan validasi data yang masuk. Pipes bisa digunakan untuk memanipulasi data request sebelum mencapai controller.
-
-**Membuat dan Menggunakan Pipe:**
-Contoh pipe untuk validasi:
-
-```typescript
-import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
-
-@Injectable()
-export class ParseIntPipe implements PipeTransform<string, number> {
-  transform(value: string, metadata: ArgumentMetadata): number {
-    const val = parseInt(value, 10);
-    if (isNaN(val)) {
-      throw new BadRequestException('Validation failed');
+    @Injectable()
+    export class LoggerMiddleware implements NestMiddleware {
+      use(req: Request, res: Response, next: NextFunction) {
+        console.log(`Request...`);
+        next();
+      }
     }
-    return val;
-  }
-}
-```
+    ```
 
-**Menggunakan Pipe dalam Controller:**
+2. **Gunakan Middleware dalam Modul:**
 
-```typescript
-import { Controller, Get, Param } from '@nestjs/common';
-import { ParseIntPipe } from './parse-int.pipe';
+    Modifikasi file `app.module.ts`:
 
-@Controller('cats')
-export class CatsController {
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): string {
-    return `This action returns a cat with id ${id}`;
-  }
-}
-```
+    ```typescript
+    import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+    import { LoggerMiddleware } from './logger.middleware';
+    import { CatsModule } from './cats/cats.module';
 
-Penjelasan:
-- **@Param('id', ParseIntPipe)**: Mendekorasi parameter route untuk menggunakan pipe.
+    @Module({
+      imports: [CatsModule],
+    })
+    export class AppModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply(LoggerMiddleware)
+          .forRoutes('*');
+      }
+    }
+    ```
+
+### 2. Interceptors
+
+Interceptors memungkinkan kita untuk mengintersep request atau response dan menambahkan logika kustom. Interceptors bisa digunakan untuk logging, transforming responses, caching, dan sebagainya.
+
+**Contoh Interceptor:**
+
+1. **Buat Interceptor:**
+
+    Buat file baru `logging.interceptor.ts`:
+
+    ```typescript
+    import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+    import { Observable } from 'rxjs';
+    import { tap } from 'rxjs/operators';
+
+    @Injectable()
+    export class LoggingInterceptor implements NestInterceptor {
+      intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+        console.log('Before...');
+
+        const now = Date.now();
+        return next
+          .handle()
+          .pipe(
+            tap(() => console.log(`After... ${Date.now() - now}ms`)),
+          );
+      }
+    }
+    ```
+
+2. **Gunakan Interceptor dalam Controller:**
+
+    Modifikasi file `cats.controller.ts`:
+
+    ```typescript
+    import { Controller, Get, Post, Body, Param, Put, Delete, UseInterceptors } from '@nestjs/common';
+    import { CatsService, Cat } from './cats.service';
+    import { LoggingInterceptor } from './logging.interceptor';
+
+    @UseInterceptors(LoggingInterceptor)
+    @Controller('cats')
+    export class CatsController {
+      // ... kode sebelumnya
+    }
+    ```
+
+### 3. Guards
+
+Guards digunakan untuk menentukan apakah request tertentu boleh dijalankan atau tidak, biasanya digunakan untuk keperluan otentikasi dan otorisasi.
+
+**Contoh Guard:**
+
+1. **Buat Guard:**
+
+    Buat file baru `roles.guard.ts`:
+
+    ```typescript
+    import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+    import { Reflector } from '@nestjs/core';
+
+    @Injectable()
+    export class RolesGuard implements CanActivate {
+      constructor(private reflector: Reflector) {}
+
+      canActivate(context: ExecutionContext): boolean {
+        const roles = this.reflector.get<string[]>('roles', context.getHandler());
+        if (!roles) {
+          return true;
+        }
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+        return roles.includes(user.role);
+      }
+    }
+    ```
+
+2. **Gunakan Guard dalam Controller:**
+
+    Modifikasi file `cats.controller.ts`:
+
+    ```typescript
+    import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
+    import { CatsService, Cat } from './cats.service';
+    import { RolesGuard } from './roles.guard';
+
+    @UseGuards(RolesGuard)
+    @Controller('cats')
+    export class CatsController {
+      // ... kode sebelumnya
+    }
+    ```
+
+### 4. Pipes
+
+Pipes digunakan untuk transformasi dan validasi data. Pipes dapat diimplementasikan sebagai class yang mengimplementasikan `PipeTransform` interface.
+
+**Contoh Pipe:**
+
+1. **Buat Pipe:**
+
+    Buat file baru `validation.pipe.ts`:
+
+    ```typescript
+    import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+    import { ObjectSchema } from '@hapi/joi';
+
+    @Injectable()
+    export class ValidationPipe implements PipeTransform {
+      constructor(private schema: ObjectSchema) {}
+
+      transform(value: any, metadata: ArgumentMetadata) {
+        const { error } = this.schema.validate(value);
+        if (error) {
+          throw new BadRequestException('Validation failed');
+        }
+        return value;
+      }
+    }
+    ```
+
+2. **Gunakan Pipe dalam Controller:**
+
+    Modifikasi file `cats.controller.ts`:
+
+    ```typescript
+    import { Controller, Get, Post, Body, Param, Put, Delete, UsePipes } from '@nestjs/common';
+    import { CatsService, Cat } from './cats.service';
+    import { ValidationPipe } from './validation.pipe';
+    import { createCatSchema } from './create-cat.dto';
+
+    @Controller('cats')
+    export class CatsController {
+      // ... kode sebelumnya
+
+      @Post()
+      @UsePipes(new ValidationPipe(createCatSchema))
+      create(@Body() createCatDto: Cat) {
+        // ... kode sebelumnya
+      }
+    }
+    ```
+
+### 5. Filters
+
+Filters digunakan untuk menangani exception secara global atau per-controller. Dengan filter, kita bisa menangani berbagai jenis error dan mengembalikan response yang sesuai.
+
+**Contoh Filter:**
+
+1. **Buat Filter:**
+
+    Buat file baru `http-exception.filter.ts`:
+
+    ```typescript
+    import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+
+    @Catch()
+    export class HttpExceptionFilter implements ExceptionFilter {
+      catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse();
+        const request = ctx.getRequest();
+        const status = exception instanceof HttpException
+          ? exception.getStatus()
+          : HttpStatus.INTERNAL_SERVER_ERROR;
+
+        response.status(status).json({
+          statusCode: status,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+          message: (exception as any).message || null,
+        });
+      }
+    }
+    ```
+
+2. **Gunakan Filter dalam Controller:**
+
+    Modifikasi file `cats.controller.ts`:
+
+    ```typescript
+    import { Controller, Get, Post, Body, Param, Put, Delete, UseFilters } from '@nestjs/common';
+    import { CatsService, Cat } from './cats.service';
+    import { HttpExceptionFilter } from './http-exception.filter';
+
+    @UseFilters(HttpExceptionFilter)
+    @Controller('cats')
+    export class CatsController {
+      // ... kode sebelumnya
+    }
+    ```
+
+### 6. Database dengan TypeORM
+
+TypeORM adalah ORM yang bekerja sangat baik dengan NestJS untuk mengelola koneksi ke database dan operasi CRUD.
+
+1. **Instalasi Paket yang Diperlukan:**
+
+    ```bash
+    npm install @nestjs/typeorm typeorm mysql2
+    ```
+
+2. **Konfigurasi TypeORM:**
+
+    Modifikasi file `app.module.ts`:
+
+    ```typescript
+    import { Module } from '@nestjs/common';
+    import { TypeOrmModule } from '@nestjs/typeorm';
+    import { CatsModule } from './cats/cats.module';
+    import { Cat } from './cats/cat.entity';
+
+    @Module({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'mysql',
+          host: 'localhost',
+          port: 3306,
+          username: 'root',
+          password: 'password',
+          database: 'test',
+          entities: [Cat],
+          synchronize: true,
+        }),
+        CatsModule,
+      ],
+    })
+    export class AppModule {}
+    ```
+
+3. **Buat Entity:**
+
+    Buat file baru `cat.entity.ts` di dalam folder `cats`:
+
+    ```typescript
+    import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+
+    @Entity()
+    export class Cat {
+      @PrimaryGeneratedColumn()
+      id: number;
+
+      @Column()
+      name: string;
+
+      @Column()
+      age: number;
+
+      @Column()
+      breed: string;
+    }
+    ```
+
+4. **Gunakan Repository dalam Service:**
+
+    Modifikasi file `cats.service.ts`:
+
+    ```typescript
+    import { Injectable } from '@nestjs/common';
+    import { InjectRepository } from '@nestjs/typeorm';
+    import { Repository } from 'typeorm';
+    import { Cat } from './cat.entity';
+
+    @Injectable()
+    export class CatsService {
+      constructor(
+        @InjectRepository(Cat)
+        private readonly catRepository: Repository<Cat>,
+      ) {}
+
+      async create(cat: Cat): Promise<Cat> {
+        return this.catRepository.save(cat);
+      }
+
+      async findAll(): Promise<Cat[]> {
+        return this.catRepository.find();
+      }
+
+      async find
+
+One(id: number): Promise<Cat> {
+        return this.catRepository.findOneBy({ id });
+      }
+
+      async update(id: number, updateCatDto: Partial<Cat>): Promise<void> {
+        await this.catRepository.update(id, updateCatDto);
+      }
+
+      async remove(id: number): Promise<void> {
+        await this.catRepository.delete(id);
+      }
+    }
+    ```
+
+5. **Modifikasi Controller untuk Menggunakan Service yang Baru:**
+
+    ```typescript
+    import { Controller, Get, Post, Body, Param, Put, Delete, HttpException, HttpStatus } from '@nestjs/common';
+    import { CatsService, Cat } from './cats.service';
+
+    @Controller('cats')
+    export class CatsController {
+      constructor(private readonly catsService: CatsService) {}
+
+      @Post()
+      async create(@Body() createCatDto: Cat) {
+        try {
+          const newCat = await this.catsService.create(createCatDto);
+          return {
+            message: 'Cat created successfully',
+            success: true,
+            data: newCat,
+          };
+        } catch (error) {
+          return {
+            message: 'Failed to create cat',
+            success: false,
+            data: error.message,
+          };
+        }
+      }
+
+      @Get()
+      async findAll() {
+        try {
+          const cats = await this.catsService.findAll();
+          return {
+            message: 'Cats retrieved successfully',
+            success: true,
+            data: cats,
+          };
+        } catch (error) {
+          return {
+            message: 'Failed to retrieve cats',
+            success: false,
+            data: error.message,
+          };
+        }
+      }
+
+      @Get(':id')
+      async findOne(@Param('id') id: number) {
+        try {
+          const cat = await this.catsService.findOne(id);
+          if (!cat) {
+            throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+          }
+          return {
+            message: 'Cat retrieved successfully',
+            success: true,
+            data: cat,
+          };
+        } catch (error) {
+          return {
+            message: 'Failed to retrieve cat',
+            success: false,
+            data: error.message,
+          };
+        }
+      }
+
+      @Put(':id')
+      async update(@Param('id') id: number, @Body() updateCatDto: Partial<Cat>) {
+        try {
+          const cat = await this.catsService.findOne(id);
+          if (!cat) {
+            throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+          }
+          await this.catsService.update(id, updateCatDto);
+          return {
+            message: 'Cat updated successfully',
+            success: true,
+            data: await this.catsService.findOne(id),
+          };
+        } catch (error) {
+          return {
+            message: 'Failed to update cat',
+            success: false,
+            data: error.message,
+          };
+        }
+      }
+
+      @Delete(':id')
+      async remove(@Param('id') id: number) {
+        try {
+          const cat = await this.catsService.findOne(id);
+          if (!cat) {
+            throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+          }
+          await this.catsService.remove(id);
+          return {
+            message: 'Cat removed successfully',
+            success: true,
+            data: cat,
+          };
+        } catch (error) {
+          return {
+            message: 'Failed to remove cat',
+            success: false,
+            data: error.message,
+          };
+        }
+      }
+    }
+    ```
+
+Dengan mempelajari konsep-konsep intermediate ini, Anda akan lebih siap untuk mengembangkan aplikasi NestJS yang lebih kompleks dan dapat menangani berbagai kebutuhan bisnis. Setiap topik di atas adalah fondasi penting dalam pengembangan aplikasi dengan NestJS, dan menguasai mereka akan membuat Anda lebih produktif dan efektif dalam pengembangan aplikasi Anda.
 
 ---
+Next
+---
+Berikut adalah struktur direktori proyek untuk aplikasi NestJS yang telah kita bahas dalam materi sebelumnya, termasuk penggunaan middleware, interceptors, guards, pipes, filters, dan integrasi database dengan TypeORM:
 
-Dengan mempelajari konsep-konsep intermediate ini, Anda akan lebih mampu untuk membangun aplikasi yang lebih kompleks dan dapat di-maintain dengan baik menggunakan NestJS. Pada bagian selanjutnya, kita akan membahas fitur-fitur lanjutan seperti Database Integration, GraphQL, Microservices, Testing, dan Performance Optimization.
+```
+nestjs-project
+├── src
+│   ├── cats
+│   │   ├── dto
+│   │   │   ├── create-cat.dto.ts
+│   │   ├── entities
+│   │   │   ├── cat.entity.ts
+│   │   ├── middleware
+│   │   │   ├── logger.middleware.ts
+│   │   ├── interceptors
+│   │   │   ├── logging.interceptor.ts
+│   │   ├── guards
+│   │   │   ├── roles.guard.ts
+│   │   ├── pipes
+│   │   │   ├── validation.pipe.ts
+│   │   ├── filters
+│   │   │   ├── http-exception.filter.ts
+│   │   ├── cats.controller.ts
+│   │   ├── cats.service.ts
+│   │   ├── cats.module.ts
+│   ├── app.module.ts
+│   ├── main.ts
+├── test
+│   ├── app.e2e-spec.ts
+│   ├── jest-e2e.json
+├── .eslintrc.js
+├── .prettierrc
+├── nest-cli.json
+├── package.json
+├── tsconfig.build.json
+├── tsconfig.json
+```
+
+### Penjelasan Struktur Direktori:
+
+1. **src/**: Folder utama untuk kode sumber aplikasi.
+    - **cats/**: Folder untuk semua yang berhubungan dengan modul `cats`.
+        - **dto/**: Folder untuk Data Transfer Objects.
+            - `create-cat.dto.ts`: DTO untuk membuat cat.
+        - **entities/**: Folder untuk entitas database.
+            - `cat.entity.ts`: Definisi entitas `Cat` untuk TypeORM.
+        - **middleware/**: Folder untuk middleware.
+            - `logger.middleware.ts`: Middleware untuk logging request.
+        - **interceptors/**: Folder untuk interceptors.
+            - `logging.interceptor.ts`: Interceptor untuk logging waktu request.
+        - **guards/**: Folder untuk guards.
+            - `roles.guard.ts`: Guard untuk peran pengguna.
+        - **pipes/**: Folder untuk pipes.
+            - `validation.pipe.ts`: Pipe untuk validasi menggunakan Joi.
+        - **filters/**: Folder untuk filters.
+            - `http-exception.filter.ts`: Filter untuk menangani HTTP exceptions.
+        - `cats.controller.ts`: Controller untuk modul `cats`.
+        - `cats.service.ts`: Service untuk modul `cats`.
+        - `cats.module.ts`: Modul untuk mengorganisir komponen `cats`.
+    - `app.module.ts`: Modul root untuk aplikasi NestJS.
+    - `main.ts`: Titik masuk aplikasi, di mana aplikasi NestJS di-boostrap.
+
+2. **test/**: Folder untuk pengujian aplikasi.
+    - `app.e2e-spec.ts`: Pengujian end-to-end untuk aplikasi.
+    - `jest-e2e.json`: Konfigurasi Jest untuk pengujian end-to-end.
+
+3. **.eslintrc.js**: Konfigurasi ESLint untuk memastikan konsistensi kode.
+4. **.prettierrc**: Konfigurasi Prettier untuk memastikan konsistensi format kode.
+5. **nest-cli.json**: Konfigurasi CLI NestJS.
+6. **package.json**: Daftar dependensi dan skrip npm.
+7. **tsconfig.build.json**: Konfigurasi TypeScript untuk proses build.
+8. **tsconfig.json**: Konfigurasi TypeScript untuk proyek.
+
+### Langkah-Langkah Praktis
+
+1. **Setup Project:**
+
+   ```bash
+   nest new nestjs-project
+   cd nestjs-project
+   npm install @nestjs/typeorm typeorm mysql2 @hapi/joi
+   ```
+
+2. **Buat Struktur Direktori:**
+
+   Buat direktori `cats` beserta sub-direktori seperti yang dijelaskan di atas.
+
+3. **Tambahkan File-File yang Diperlukan:**
+
+   Tambahkan file `create-cat.dto.ts`, `cat.entity.ts`, `logger.middleware.ts`, `logging.interceptor.ts`, `roles.guard.ts`, `validation.pipe.ts`, dan `http-exception.filter.ts` dengan isi yang sesuai.
+
+4. **Modifikasi `cats.module.ts`:**
+
+   ```typescript
+   import { Module } from '@nestjs/common';
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { CatsController } from './cats.controller';
+   import { CatsService } from './cats.service';
+   import { Cat } from './entities/cat.entity';
+
+   @Module({
+     imports: [TypeOrmModule.forFeature([Cat])],
+     controllers: [CatsController],
+     providers: [CatsService],
+   })
+   export class CatsModule {}
+   ```
+
+5. **Modifikasi `app.module.ts`:**
+
+   ```typescript
+   import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { CatsModule } from './cats/cats.module';
+   import { LoggerMiddleware } from './cats/middleware/logger.middleware';
+
+   @Module({
+     imports: [
+       TypeOrmModule.forRoot({
+         type: 'mysql',
+         host: 'localhost',
+         port: 3306,
+         username: 'root',
+         password: 'password',
+         database: 'test',
+         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+         synchronize: true,
+       }),
+       CatsModule,
+     ],
+   })
+   export class AppModule implements NestModule {
+     configure(consumer: MiddlewareConsumer) {
+       consumer
+         .apply(LoggerMiddleware)
+         .forRoutes('*');
+     }
+   }
+   ```
+
+6. **Modifikasi `main.ts`:**
+
+   ```typescript
+   import { NestFactory } from '@nestjs/core';
+   import { AppModule } from './app.module';
+
+   async function bootstrap() {
+     const app = await NestFactory.create(AppModule);
+     await app.listen(3000);
+   }
+   bootstrap();
+   ```
+
+Dengan struktur direktori dan penjelasan ini, Anda dapat melanjutkan pengembangan aplikasi NestJS dengan lebih terorganisir dan mengikuti praktik terbaik dalam pengembangan aplikasi berbasis NestJS.
