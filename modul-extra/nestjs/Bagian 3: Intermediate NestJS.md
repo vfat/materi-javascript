@@ -173,7 +173,7 @@ Interceptors di NestJS adalah kelas yang memungkinkan Anda mengganggu atau memod
 2. **Mendaftarkan Interceptor**
 3. **Menggunakan Interceptor dalam Controller atau Global**
 
-#### 1. Membuat Interceptor
+#### 2.1. Membuat Interceptor
 
 Langkah pertama adalah membuat interceptor baru. Misalkan kita ingin membuat interceptor yang mencatat waktu eksekusi dari setiap permintaan.
 
@@ -208,7 +208,7 @@ Penjelasan:
 - `intercept` adalah metode yang diimplementasikan untuk mengintersepsi permintaan dan respons.
 - `tap` dari RxJS digunakan untuk menjalankan log setelah permintaan selesai diproses.
 
-#### 2. Mendaftarkan Interceptor
+#### 2.2. Mendaftarkan Interceptor
 
 Interceptor dapat didaftarkan secara global, dalam modul, atau untuk metode tertentu dalam controller.
 
@@ -289,7 +289,7 @@ export class CatsController {
 Penjelasan:
 - `@UseInterceptors` digunakan untuk menerapkan interceptor pada controller atau metode tertentu.
 
-#### 3. Menguji Interceptor
+#### 2.3. Menguji Interceptor
 
 Untuk memastikan interceptor berfungsi dengan baik, kita bisa menggunakan Postman atau Thunder Client untuk mengirim permintaan ke server kita.
 
