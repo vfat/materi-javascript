@@ -146,24 +146,11 @@ export class LoggerMiddleware implements NestMiddleware {
 
 ```typescript
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatsModule } from './cats/cats.module';
 import { LoggerMiddleware } from './cats/middleware/logger.middleware';
 
 @Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'password',
-      database: 'test',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-    }),
-    CatsModule,
-  ],
+  imports: [CatsModule],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
