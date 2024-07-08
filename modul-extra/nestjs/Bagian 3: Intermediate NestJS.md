@@ -396,49 +396,263 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 
 ### 3. Guards
 
-Guards digunakan untuk menentukan apakah request tertentu boleh dijalankan atau tidak, biasanya digunakan untuk keperluan otentikasi dan otorisasi.
+Guards di NestJS digunakan untuk menentukan apakah permintaan tertentu harus diproses oleh route handler atau tidak. Mereka sangat berguna untuk otentikasi dan otorisasi. Guards berfungsi seperti middleware tetapi memiliki prioritas yang lebih tinggi dan dapat digunakan untuk mengontrol alur permintaan berdasarkan logika tertentu.
 
-**Contoh Guard:**
+#### Langkah-langkah Menggunakan Guards di NestJS
 
-1. **Buat Guard:**
+1. **Membuat Guard**
+2. **Mendaftarkan Guard**
+3. **Menggunakan Guard dalam Controller atau Global**
 
-    Buat file baru `roles.guard.ts`:
+#### 3.1. Membuat Guard
 
-    ```typescript
-    import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-    import { Reflector } from '@nestjs/core';
+Langkah pertama adalah membuat guard baru. Misalkan kita ingin membuat guard sederhana yang memeriksa apakah permintaan memiliki header khusus yang berisi token.
 
-    @Injectable()
-    export class RolesGuard implements CanActivate {
-      constructor(private reflector: Reflector) {}
+**Langkah-langkah:**
 
-      canActivate(context: ExecutionContext): boolean {
-        const roles = this.reflector.get<string[]>('roles', context.getHandler());
-        if (!roles) {
-          return true;
-        }
-        const request = context.switchToHttp().getRequest();
-        const user = request.user;
-        return roles.includes(user.role);
-      }
+1. Buat direktori `guards` di dalam direktori `cats`.
+
+2. Buat file `auth.guard.ts` di dalam direktori `guards`.
+
+3. Tambahkan kode berikut ke `auth.guard.ts`:
+
+```typescript
+import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = request.headers['authorization'];
+
+    if (!token) {
+      throw new HttpException('Authorization token is missing', HttpStatus.UNAUTHORIZED);
     }
-    ```
 
-2. **Gunakan Guard dalam Controller:**
-
-    Modifikasi file `cats.controller.ts`:
-
-    ```typescript
-    import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
-    import { CatsService, Cat } from './cats.service';
-    import { RolesGuard } from './roles.guard';
-
-    @UseGuards(RolesGuard)
-    @Controller('cats')
-    export class CatsController {
-      // ... kode sebelumnya
+    // Here you would normally validate the token
+    if (token !== 'valid-token') {
+      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
     }
-    ```
+
+    return true;
+  }
+}
+```
+
+Penjelasan:
+- `AuthGuard` adalah guard yang memeriksa apakah permintaan memiliki header `authorization` yang valid.
+- `canActivate` adalah metode yang mengembalikan `true` jika permintaan diizinkan untuk melanjutkan, atau melempar `HttpException` jika tidak.
+
+#### 3.2. Mendaftarkan Guard
+
+Guard dapat didaftarkan secara global, dalam modul, atau untuk metode tertentu dalam controller.
+
+#### a. Mendaftarkan Guard secara Global
+
+1. Buka `main.ts`.
+
+2. Modifikasi kode untuk mendaftarkan guard secara global:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { AuthGuard } from './cats/guards/auth.guard';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalGuards(new AuthGuard());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+Penjelasan:
+- `useGlobalGuards` digunakan untuk mendaftarkan guard secara global sehingga akan diterapkan pada semua rute di aplikasi.
+
+#### b. Mendaftarkan Guard pada Modul
+
+1. Buka `cats.module.ts`.
+
+2. Modifikasi kode untuk mendaftarkan guard:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { CatsController } from './cats.controller';
+import { CatsService } from './cats.service';
+import { AuthGuard } from './guards/auth.guard';
+
+@Module({
+  controllers: [CatsController],
+  providers: [
+    CatsService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
+})
+export class CatsModule {}
+```
+
+Penjelasan:
+- `APP_GUARD` digunakan untuk mendaftarkan guard di tingkat modul.
+
+#### c. Menggunakan Guard dalam Controller atau Metode
+
+1. Buka `cats.controller.ts`.
+
+2. Tambahkan kode untuk menggunakan guard di controller atau metode tertentu:
+
+```typescript
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { AuthGuard } from './guards/auth.guard';
+
+@Controller('cats')
+@UseGuards(AuthGuard) // Menerapkan guard pada seluruh controller
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Get()
+  findAll(): Cat[] {
+    return this.catsService.findAll();
+  }
+}
+```
+
+Penjelasan:
+- `@UseGuards` digunakan untuk menerapkan guard pada controller atau metode tertentu.
+
+#### 3.3. Menguji Guard
+
+Untuk memastikan guard berfungsi dengan baik, kita bisa menggunakan Postman atau Thunder Client untuk mengirim permintaan ke server kita.
+
+**Langkah-langkah:**
+
+1. Jalankan aplikasi NestJS Anda:
+   ```bash
+   npm run start
+   ```
+
+2. Buka Postman atau Thunder Client.
+
+3. Kirim permintaan GET ke `http://localhost:3000/cats` tanpa header `authorization`.
+
+4. Anda akan mendapatkan respons dengan status 401 Unauthorized:
+
+```json
+{
+  "statusCode": 401,
+  "message": "Authorization token is missing"
+}
+```
+
+5. Kirim permintaan GET ke `http://localhost:3000/cats` dengan header `authorization: valid-token`.
+
+6. Anda akan mendapatkan respons yang sesuai:
+
+```json
+{
+  "message": "Cats retrieved successfully",
+  "success": true,
+  "data": []
+}
+```
+
+Penjelasan:
+- Guard akan memeriksa apakah header `authorization` ada dan valid sebelum mengizinkan permintaan untuk melanjutkan.
+
+#### Contoh Kode Lengkap
+
+**auth.guard.ts:**
+
+```typescript
+import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = request.headers['authorization'];
+
+    if (!token) {
+      throw new HttpException('Authorization token is missing', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Here you would normally validate the token
+    if (token !== 'valid-token') {
+      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+    }
+
+    return true;
+  }
+}
+```
+
+**main.ts (Global Guard):**
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { AuthGuard } from './cats/guards/auth.guard';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalGuards(new AuthGuard());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+**cats.module.ts (Module-level Guard):**
+
+```typescript
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { CatsController } from './cats.controller';
+import { CatsService } from './cats.service';
+import { AuthGuard } from './guards/auth.guard';
+
+@Module({
+  controllers: [CatsController],
+  providers: [
+    CatsService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
+})
+export class CatsModule {}
+```
+
+**cats.controller.ts (Controller-level Guard):**
+
+```typescript
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { AuthGuard } from './guards/auth.guard';
+
+@Controller('cats')
+@UseGuards(AuthGuard)
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Get()
+  findAll(): Cat[] {
+    return this.catsService.findAll();
+  }
+}
+```
+
+Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tentang bagaimana guards bekerja di NestJS dan bagaimana menggunakannya untuk menambahkan fitur otentikasi dan otorisasi ke aplikasi Anda.
 
 ### 4. Pipes
 
