@@ -726,3 +726,99 @@ nestjs-project
    ```
 
 Dengan struktur direktori dan penjelasan ini, Anda dapat melanjutkan pengembangan aplikasi NestJS dengan lebih terorganisir dan mengikuti praktik terbaik dalam pengembangan aplikasi berbasis NestJS.
+
+
+---
+extra
+
+---
+
+Di NestJS, middleware dan interceptor memiliki tujuan dan kegunaan yang berbeda. Memahami kapan menggunakan masing-masing bisa membantu Anda membangun aplikasi yang lebih terstruktur dan terorganisir. Berikut penjelasan kapan sebaiknya menggunakan middleware dan kapan menggunakan interceptor:
+
+### Middleware
+
+Middleware adalah fungsi yang dijalankan sebelum rute penanganan permintaan. Middleware biasanya digunakan untuk tugas-tugas yang tidak spesifik terhadap rute atau logika aplikasi yang lebih umum dan global. Berikut adalah beberapa contoh kapan sebaiknya menggunakan middleware:
+
+1. **Autentikasi**: Middleware sering digunakan untuk memeriksa token autentikasi dan memverifikasi pengguna sebelum permintaan diteruskan ke rute penanganan.
+2. **Logging**: Middleware dapat digunakan untuk mencatat informasi tentang setiap permintaan yang masuk, seperti URL, metode HTTP, dan waktu.
+3. **Body Parsing**: Middleware digunakan untuk mem-parsing body dari permintaan, seperti JSON atau URL-encoded data.
+4. **Pengaturan Header**: Middleware dapat digunakan untuk menambahkan atau memodifikasi header dalam permintaan atau tanggapan.
+5. **CORS**: Middleware sering digunakan untuk menangani Cross-Origin Resource Sharing (CORS).
+
+Contoh penggunaan middleware:
+
+```typescript
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    console.log(`Request...`);
+    next();
+  }
+}
+
+// Di dalam AppModule atau modul lain
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+
+@Module({})
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}
+```
+
+### Interceptor
+
+Interceptors adalah kelas yang mengimplementasikan antarmuka `NestInterceptor`. Interceptors digunakan untuk mengintervensi alur eksekusi sebelum atau sesudah rute penanganan permintaan. Mereka sering digunakan untuk transformasi dan manipulasi data. Berikut adalah beberapa contoh kapan sebaiknya menggunakan interceptor:
+
+1. **Transformasi Data**: Interceptor dapat digunakan untuk mengubah atau memodifikasi data sebelum mengirim tanggapan ke klien.
+2. **Logging**: Interceptor dapat mencatat durasi eksekusi suatu operasi atau mencatat hasil sebelum mengirim tanggapan.
+3. **Caching**: Interceptor dapat digunakan untuk mengimplementasikan caching data untuk mempercepat respons.
+4. **Handling Errors**: Interceptor dapat menangkap dan mengubah kesalahan yang terjadi selama eksekusi menjadi tanggapan yang lebih bermakna atau user-friendly.
+5. **Timeouts**: Interceptor dapat digunakan untuk mengatur batas waktu eksekusi suatu operasi dan menangani situasi di mana operasi tersebut memakan waktu terlalu lama.
+
+Contoh penggunaan interceptor:
+
+```typescript
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+@Injectable()
+export class TransformInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    return next.handle().pipe(map(data => ({ data })));
+  }
+}
+
+// Di dalam controller
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
+
+@Controller('cats')
+export class CatsController {
+  @Get()
+  @UseInterceptors(TransformInterceptor)
+  findAll() {
+    return [];
+  }
+}
+```
+
+### Perbandingan
+
+- **Middleware**:
+  - Dijalankan sebelum rute penanganan.
+  - Digunakan untuk tugas-tugas umum seperti autentikasi, logging, body parsing, pengaturan header, dan CORS.
+  - Lebih global dan tidak terikat pada rute spesifik.
+
+- **Interceptor**:
+  - Dijalankan sebelum atau sesudah rute penanganan.
+  - Digunakan untuk transformasi data, logging, caching, handling errors, dan timeouts.
+  - Lebih fleksibel dan bisa diterapkan pada rute atau metode tertentu dengan mudah.
+
+Dengan memahami perbedaan dan kegunaan masing-masing, Anda dapat memilih alat yang tepat untuk kebutuhan spesifik aplikasi Anda.
