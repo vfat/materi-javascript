@@ -165,48 +165,233 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 
 ### 2. Interceptors
 
-Interceptors memungkinkan kita untuk mengintersep request atau response dan menambahkan logika kustom. Interceptors bisa digunakan untuk logging, transforming responses, caching, dan sebagainya.
+Interceptors di NestJS adalah kelas yang memungkinkan Anda mengganggu atau memodifikasi aliran permintaan atau respons di aplikasi Anda. Mereka bisa digunakan untuk berbagai tujuan seperti logging, transformasi data, cache, dan lainnya.
 
-**Contoh Interceptor:**
+#### Penggunaan Interceptors di NestJS
 
-1. **Buat Interceptor:**
+1. **Membuat Interceptor**
+2. **Mendaftarkan Interceptor**
+3. **Menggunakan Interceptor dalam Controller atau Global**
 
-    Buat file baru `logging.interceptor.ts`:
+#### 1. Membuat Interceptor
 
-    ```typescript
-    import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-    import { Observable } from 'rxjs';
-    import { tap } from 'rxjs/operators';
+Langkah pertama adalah membuat interceptor baru. Misalkan kita ingin membuat interceptor yang mencatat waktu eksekusi dari setiap permintaan.
 
-    @Injectable()
-    export class LoggingInterceptor implements NestInterceptor {
-      intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-        console.log('Before...');
+**Langkah-langkah:**
 
-        const now = Date.now();
-        return next
-          .handle()
-          .pipe(
-            tap(() => console.log(`After... ${Date.now() - now}ms`)),
-          );
-      }
-    }
-    ```
+1. Buat direktori `interceptors` di dalam direktori `cats`.
 
-2. **Gunakan Interceptor dalam Controller:**
+2. Buat file `logging.interceptor.ts` di dalam direktori `interceptors`.
 
-    Modifikasi file `cats.controller.ts`:
+3. Tambahkan kode berikut ke `logging.interceptor.ts`:
 
-    ```typescript
-    import { Controller, Get, Post, Body, Param, Put, Delete, UseInterceptors } from '@nestjs/common';
-    import { CatsService, Cat } from './cats.service';
-    import { LoggingInterceptor } from './logging.interceptor';
+```typescript
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
-    @UseInterceptors(LoggingInterceptor)
-    @Controller('cats')
-    export class CatsController {
-      // ... kode sebelumnya
-    }
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const now = Date.now();
+    return next
+      .handle()
+      .pipe(
+        tap(() => console.log(`After... ${Date.now() - now}ms`))
+      );
+  }
+}
+```
+
+Penjelasan:
+- `LoggingInterceptor` adalah interceptor yang mencatat waktu eksekusi permintaan.
+- `intercept` adalah metode yang diimplementasikan untuk mengintersepsi permintaan dan respons.
+- `tap` dari RxJS digunakan untuk menjalankan log setelah permintaan selesai diproses.
+
+#### 2. Mendaftarkan Interceptor
+
+Interceptor dapat didaftarkan secara global, dalam modul, atau untuk metode tertentu dalam controller.
+
+#### a. Mendaftarkan Interceptor secara Global
+
+1. Buka `main.ts`.
+
+2. Modifikasi kode untuk mendaftarkan interceptor secara global:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { LoggingInterceptor } from './cats/interceptors/logging.interceptor';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalInterceptors(new LoggingInterceptor());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+Penjelasan:
+- `useGlobalInterceptors` digunakan untuk mendaftarkan interceptor secara global sehingga akan diterapkan pada semua rute di aplikasi.
+
+#### b. Mendaftarkan Interceptor pada Modul
+
+1. Buka `cats.module.ts`.
+
+2. Modifikasi kode untuk mendaftarkan interceptor:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { CatsController } from './cats.controller';
+import { CatsService } from './cats.service';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+
+@Module({
+  controllers: [CatsController],
+  providers: [
+    CatsService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
+})
+export class CatsModule {}
+```
+
+Penjelasan:
+- `APP_INTERCEPTOR` digunakan untuk mendaftarkan interceptor di tingkat modul.
+
+#### c. Menggunakan Interceptor dalam Controller atau Metode
+
+1. Buka `cats.controller.ts`.
+
+2. Tambahkan kode untuk menggunakan interceptor di controller atau metode tertentu:
+
+```typescript
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+
+@Controller('cats')
+@UseInterceptors(LoggingInterceptor) // Menerapkan interceptor pada seluruh controller
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Get()
+  findAll(): Cat[] {
+    return this.catsService.findAll();
+  }
+}
+```
+
+Penjelasan:
+- `@UseInterceptors` digunakan untuk menerapkan interceptor pada controller atau metode tertentu.
+
+#### 3. Menguji Interceptor
+
+Untuk memastikan interceptor berfungsi dengan baik, kita bisa menggunakan Postman atau Thunder Client untuk mengirim permintaan ke server kita.
+
+**Langkah-langkah:**
+
+1. Jalankan aplikasi NestJS Anda:
+   ```bash
+   npm run start
+   ```
+
+2. Buka Postman atau Thunder Client.
+
+3. Kirim permintaan GET ke `http://localhost:3000/cats`.
+
+4. Periksa log di terminal di mana aplikasi NestJS berjalan. Anda akan melihat log dari interceptor:
+
+```
+After... 5ms
+```
+
+Penjelasan:
+- Interceptor akan mencatat waktu yang dibutuhkan untuk menyelesaikan permintaan.
+
+#### Contoh Kode Lengkap
+
+**logging.interceptor.ts:**
+
+```typescript
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const now = Date.now();
+    return next
+      .handle()
+      .pipe(
+        tap(() => console.log(`After... ${Date.now() - now}ms`))
+      );
+  }
+}
+```
+
+**main.ts (Global Interceptor):**
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { LoggingInterceptor } from './cats/interceptors/logging.interceptor';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalInterceptors(new LoggingInterceptor());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+**cats.module.ts (Module-level Interceptor):**
+
+```typescript
+import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { CatsController } from './cats.controller';
+import { CatsService } from './cats.service';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+
+@Module({
+  controllers: [CatsController],
+  providers: [
+    CatsService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
+})
+export class CatsModule {}
+```
+
+**cats.controller.ts (Controller-level Interceptor):**
+
+```typescript
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+
+@Controller('cats')
+@UseInterceptors(LoggingInterceptor)
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Get()
+  findAll(): Cat[] {
+    return this.catsService.findAll();
+  }
+}
+```
+
+Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tentang bagaimana interceptors bekerja di NestJS dan bagaimana menggunakannya untuk menambahkan fitur logging ke aplikasi Anda.
     ```
 
 ### 3. Guards
