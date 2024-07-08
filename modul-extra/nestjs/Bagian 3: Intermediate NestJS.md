@@ -11,47 +11,183 @@ Pada bagian ini, kita akan mendalami konsep-konsep lebih lanjut yang akan memban
 
 ### 1. Middleware
 
-Middleware adalah fungsi yang dieksekusi sebelum request mencapai controller. Middleware dapat digunakan untuk memodifikasi request dan response objects, mengakhiri siklus request-response, atau memanggil middleware berikutnya dalam stack.
 
-**Contoh Middleware:**
+Middleware di NestJS adalah fungsi yang dijalankan sebelum handler rute. Middleware dapat melakukan berbagai tugas seperti logging, autentikasi, atau modifikasi objek permintaan dan respons.
 
-1. **Buat Middleware:**
+#### Penggunaan Middleware di NestJS
 
-    Buat file baru `logger.middleware.ts`:
+1. **Membuat Middleware**
+2. **Mendaftarkan Middleware**
+3. **Menambahkan Middleware di Modul Utama**
 
-    ```typescript
-    import { Injectable, NestMiddleware } from '@nestjs/common';
-    import { Request, Response, NextFunction } from 'express';
+#### 1.1. Membuat Middleware
 
-    @Injectable()
-    export class LoggerMiddleware implements NestMiddleware {
-      use(req: Request, res: Response, next: NextFunction) {
-        console.log(`Request...`);
-        next();
-      }
-    }
-    ```
+Langkah pertama adalah membuat middleware baru. Misalkan kita ingin membuat middleware logging yang mencatat informasi tentang setiap permintaan yang masuk.
 
-2. **Gunakan Middleware dalam Modul:**
+**Langkah-langkah:**
 
-    Modifikasi file `app.module.ts`:
+1. Buat direktori `middleware` di dalam direktori `cats`.
 
-    ```typescript
-    import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-    import { LoggerMiddleware } from './logger.middleware';
-    import { CatsModule } from './cats/cats.module';
+2. Buat file `logger.middleware.ts` di dalam direktori `middleware` tersebut.
 
-    @Module({
-      imports: [CatsModule],
-    })
-    export class AppModule implements NestModule {
-      configure(consumer: MiddlewareConsumer) {
-        consumer
-          .apply(LoggerMiddleware)
-          .forRoutes('*');
-      }
-    }
-    ```
+3. Tambahkan kode berikut ke `logger.middleware.ts`:
+
+```typescript
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  private logger = new Logger('HTTP');
+
+  use(req: Request, res: Response, next: NextFunction): void {
+    const { method, originalUrl } = req;
+    const start = Date.now();
+
+    res.on('finish', () => {
+      const { statusCode } = res;
+      const duration = Date.now() - start;
+      this.logger.log(`${method} ${originalUrl} ${statusCode} - ${duration}ms`);
+    });
+
+    next();
+  }
+}
+```
+
+Penjelasan:
+- `LoggerMiddleware` adalah middleware yang mencatat metode HTTP, URL asli, kode status respons, dan durasi permintaan.
+- `res.on('finish', ...)` digunakan untuk menjalankan log setelah respons dikirim.
+
+#### 1.2. Mendaftarkan Middleware
+
+Middleware perlu didaftarkan untuk digunakan dalam aplikasi. Ini bisa dilakukan di modul utama atau di modul tertentu.
+
+**Langkah-langkah:**
+
+1. Buka `app.module.ts`.
+
+2. Modifikasi kode untuk mendaftarkan middleware:
+
+```typescript
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CatsModule } from './cats/cats.module';
+import { LoggerMiddleware } from './cats/middleware/logger.middleware';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: 'localhost',
+      port: 3306,
+      username: 'root',
+      password: 'password',
+      database: 'test',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true,
+    }),
+    CatsModule,
+  ],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('*'); // Apply middleware to all routes
+  }
+}
+```
+
+Penjelasan:
+- `AppModule` mengimplementasikan `NestModule` untuk mengonfigurasi middleware.
+- `configure` digunakan untuk mendaftarkan middleware menggunakan `MiddlewareConsumer`.
+- `forRoutes('*')` menyatakan bahwa middleware ini akan dijalankan untuk semua rute.
+
+#### 1.3. Menguji Middleware
+
+Untuk memastikan middleware berfungsi dengan baik, kita bisa menggunakan Postman atau Thunder Client untuk mengirim permintaan ke server kita.
+
+**Langkah-langkah:**
+
+1. Jalankan aplikasi NestJS Anda:
+   ```bash
+   npm run start
+   ```
+
+2. Buka Postman atau Thunder Client.
+
+3. Kirim permintaan GET ke `http://localhost:3000/cats`.
+
+4. Periksa log di terminal di mana aplikasi NestJS berjalan. Anda akan melihat log dari middleware:
+
+```
+[Nest] 12345  - 01/01/2023, 12:34:56 PM     LOG [HTTP] GET /cats 200 - 15ms
+```
+
+Penjelasan:
+- Middleware akan mencatat informasi tentang setiap permintaan yang diterima oleh server, termasuk metode HTTP, URL, kode status respons, dan durasi permintaan.
+
+#### Contoh Kode Lengkap
+
+**logger.middleware.ts:**
+
+```typescript
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  private logger = new Logger('HTTP');
+
+  use(req: Request, res: Response, next: NextFunction): void {
+    const { method, originalUrl } = req;
+    const start = Date.now();
+
+    res.on('finish', () => {
+      const { statusCode } = res;
+      const duration = Date.now() - start;
+      this.logger.log(`${method} ${originalUrl} ${statusCode} - ${duration}ms`);
+    });
+
+    next();
+  }
+}
+```
+
+**app.module.ts:**
+
+```typescript
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CatsModule } from './cats/cats.module';
+import { LoggerMiddleware } from './cats/middleware/logger.middleware';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: 'localhost',
+      port: 3306,
+      username: 'root',
+      password: 'password',
+      database: 'test',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true,
+    }),
+    CatsModule,
+  ],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('*');
+  }
+}
+```
+
+Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tentang bagaimana middleware bekerja di NestJS dan bagaimana menggunakannya untuk menambahkan fitur logging ke aplikasi Anda.
 
 ### 2. Interceptors
 
