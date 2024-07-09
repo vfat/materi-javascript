@@ -656,53 +656,271 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 
 ### 4. Pipes
 
-Pipes digunakan untuk transformasi dan validasi data. Pipes dapat diimplementasikan sebagai class yang mengimplementasikan `PipeTransform` interface.
+### Bagian 3: Intermediate NestJS - Pipes
 
-**Contoh Pipe:**
+Pipes di NestJS digunakan untuk melakukan transformasi dan validasi pada data yang masuk ke handler. Mereka sangat berguna untuk memastikan bahwa data yang diterima sesuai dengan harapan sebelum diproses lebih lanjut.
 
-1. **Buat Pipe:**
+#### Langkah-langkah Menggunakan Pipes di NestJS
 
-    Buat file baru `validation.pipe.ts`:
+1. **Membuat Pipe Kustom**
+2. **Mendaftarkan Pipe**
+3. **Menggunakan Pipe dalam Controller atau Global**
 
-    ```typescript
-    import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
-    import { ObjectSchema } from '@hapi/joi';
+#### 4.1. Membuat Pipe Kustom
 
-    @Injectable()
-    export class ValidationPipe implements PipeTransform {
-      constructor(private schema: ObjectSchema) {}
+Langkah pertama adalah membuat pipe baru. Misalkan kita ingin membuat pipe yang memvalidasi data input untuk membuat entitas `Cat`.
 
-      transform(value: any, metadata: ArgumentMetadata) {
-        const { error } = this.schema.validate(value);
-        if (error) {
-          throw new BadRequestException('Validation failed');
-        }
-        return value;
-      }
+**Langkah-langkah:**
+
+1. Buat direktori `pipes` di dalam direktori `cats`.
+
+2. Buat file `validate-cat.pipe.ts` di dalam direktori `pipes`.
+
+3. Tambahkan kode berikut ke `validate-cat.pipe.ts`:
+
+```typescript
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { CreateCatDto } from '../dto/create-cat.dto';
+import * as Joi from 'joi';
+
+@Injectable()
+export class ValidateCatPipe implements PipeTransform {
+  private readonly schema = Joi.object({
+    id: Joi.number().required(),
+    name: Joi.string().required(),
+    age: Joi.number().required(),
+    breed: Joi.string().required(),
+  });
+
+  transform(value: any, metadata: ArgumentMetadata) {
+    const { error } = this.schema.validate(value);
+    if (error) {
+      throw new BadRequestException(`Validation failed: ${error.message}`);
     }
-    ```
+    return value;
+  }
+}
+```
 
-2. **Gunakan Pipe dalam Controller:**
+Penjelasan:
+- `ValidateCatPipe` adalah pipe yang memvalidasi data input menggunakan `Joi`.
+- `transform` adalah metode yang mengembalikan nilai yang divalidasi jika valid, atau melempar `BadRequestException` jika tidak valid.
 
-    Modifikasi file `cats.controller.ts`:
+#### 4.2. Mendaftarkan Pipe
 
-    ```typescript
-    import { Controller, Get, Post, Body, Param, Put, Delete, UsePipes } from '@nestjs/common';
-    import { CatsService, Cat } from './cats.service';
-    import { ValidationPipe } from './validation.pipe';
-    import { createCatSchema } from './create-cat.dto';
+Pipe dapat didaftarkan secara global, dalam modul, atau untuk metode tertentu dalam controller.
 
-    @Controller('cats')
-    export class CatsController {
-      // ... kode sebelumnya
+#### a. Mendaftarkan Pipe secara Global
 
-      @Post()
-      @UsePipes(new ValidationPipe(createCatSchema))
-      create(@Body() createCatDto: Cat) {
-        // ... kode sebelumnya
-      }
+1. Buka `main.ts`.
+
+2. Modifikasi kode untuk mendaftarkan pipe secara global:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidateCatPipe } from './cats/pipes/validate-cat.pipe';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidateCatPipe());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+Penjelasan:
+- `useGlobalPipes` digunakan untuk mendaftarkan pipe secara global sehingga akan diterapkan pada semua rute di aplikasi.
+
+#### b. Menggunakan Pipe dalam Controller atau Metode
+
+1. Buka `cats.controller.ts`.
+
+2. Tambahkan kode untuk menggunakan pipe di controller atau metode tertentu:
+
+```typescript
+import { Controller, Get, Post, Body, Param, Put, Delete, UsePipes } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { ValidateCatPipe } from './pipes/validate-cat.pipe';
+
+@Controller('cats')
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Post()
+  @UsePipes(ValidateCatPipe) // Menerapkan pipe pada metode tertentu
+  create(@Body() createCatDto: Cat) {
+    try {
+      this.catsService.create(createCatDto);
+      return {
+        message: 'Cat created successfully',
+        success: true,
+        data: createCatDto,
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to create cat',
+        success: false,
+        data: error.message,
+      };
     }
-    ```
+  }
+
+  // Metode lainnya tetap sama
+}
+```
+
+Penjelasan:
+- `@UsePipes` digunakan untuk menerapkan pipe pada metode tertentu.
+
+#### 4.3. Menguji Pipe
+
+Untuk memastikan pipe berfungsi dengan baik, kita bisa menggunakan Postman atau Thunder Client untuk mengirim permintaan ke server kita.
+
+**Langkah-langkah:**
+
+1. Jalankan aplikasi NestJS Anda:
+   ```bash
+   npm run start
+   ```
+
+2. Buka Postman atau Thunder Client.
+
+3. Kirim permintaan POST ke `http://localhost:3000/cats` dengan body yang valid:
+
+```json
+{
+  "id": 1,
+  "name": "Tom",
+  "age": 3,
+  "breed": "Siamese"
+}
+```
+
+4. Anda akan mendapatkan respons yang sesuai:
+
+```json
+{
+  "message": "Cat created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Tom",
+    "age": 3,
+    "breed": "Siamese"
+  }
+}
+```
+
+5. Kirim permintaan POST ke `http://localhost:3000/cats` dengan body yang tidak valid:
+
+```json
+{
+  "id": 1,
+  "name": "Tom",
+  "age": "three",
+  "breed": "Siamese"
+}
+```
+
+6. Anda akan mendapatkan respons dengan status 400 Bad Request:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed: \"age\" must be a number"
+}
+```
+
+Penjelasan:
+- Pipe akan memvalidasi data input sebelum diteruskan ke handler. Jika data tidak valid, pipe akan melemparkan pengecualian.
+
+#### Contoh Kode Lengkap
+
+**validate-cat.pipe.ts:**
+
+```typescript
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { CreateCatDto } from '../dto/create-cat.dto';
+import * as Joi from 'joi';
+
+@Injectable()
+export class ValidateCatPipe implements PipeTransform {
+  private readonly schema = Joi.object({
+    id: Joi.number().required(),
+    name: Joi.string().required(),
+    age: Joi.number().required(),
+    breed: Joi.string().required(),
+  });
+
+  transform(value: any, metadata: ArgumentMetadata) {
+    const { error } = this.schema.validate(value);
+    if (error) {
+      throw new BadRequestException(`Validation failed: ${error.message}`);
+    }
+    return value;
+  }
+}
+```
+
+**main.ts (Global Pipe):**
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidateCatPipe } from './cats/pipes/validate-cat.pipe';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidateCatPipe());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+**cats.controller.ts (Controller-level Pipe):**
+
+```typescript
+import { Controller, Get, Post, Body, Param, Put, Delete, UsePipes } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { ValidateCatPipe } from './pipes/validate-cat.pipe';
+
+@Controller('cats')
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Post()
+  @UsePipes(ValidateCatPipe)
+  create(@Body() createCatDto: Cat) {
+    try {
+      this.catsService.create(createCatDto);
+      return {
+        message: 'Cat created successfully',
+        success: true,
+        data: createCatDto,
+      };
+    } catch (error) {
+      return {
+        message: 'Failed to create cat',
+        success: false,
+        data: error.message,
+      };
+    }
+  }
+
+  // Metode lainnya tetap sama
+}
+```
+
+Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tentang bagaimana pipes bekerja di NestJS dan bagaimana menggunakannya untuk menambahkan fitur validasi dan transformasi ke aplikasi Anda.
+
+#### Kapan Menggunakan Pipes
+- **Validasi Data**: Gunakan pipes untuk memvalidasi data masuk sesuai dengan DTO atau skema validasi lain.
+- **Transformasi Data**: Gunakan pipes untuk mentransformasi data, seperti mengubah string menjadi integer, objek, atau tipe data lain yang diperlukan.
+- **Global vs. Lokal**: Gunakan pipes global untuk kebutuhan validasi dan transformasi yang konsisten di seluruh aplikasi. Gunakan pipes lokal untuk kebutuhan khusus di controller atau handler tertentu.
+- **Kustomisasi**: Buat custom pipes jika Anda memiliki kebutuhan validasi atau transformasi data yang tidak bisa dipenuhi oleh pipes bawaan NestJS.
+
+Dengan memahami kapan dan bagaimana menggunakan pipes, Anda bisa memastikan bahwa data yang masuk ke aplikasi Anda selalu sesuai dan dalam format yang benar, sehingga meningkatkan keandalan dan keamanan aplikasi Anda.
 
 ### 5. Filters
 
