@@ -940,53 +940,322 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 
 ### 5. Filters
 
-Filters digunakan untuk menangani exception secara global atau per-controller. Dengan filter, kita bisa menangani berbagai jenis error dan mengembalikan response yang sesuai.
+Exception Filters di NestJS digunakan untuk menangani dan memodifikasi respons yang dihasilkan ketika sebuah pengecualian (exception) dilempar dalam aplikasi. Filters memungkinkan Anda untuk menangani kesalahan secara terpusat dan memberikan respons yang lebih terstruktur kepada klien.
 
-**Contoh Filter:**
+#### Kapan Menggunakan Filter:
+- **Global Error Handling**: Gunakan filter untuk menangani semua kesalahan yang terjadi di aplikasi Anda secara global.
+- **Specific Error Handling**: Gunakan filter untuk menangani jenis kesalahan tertentu dengan cara khusus.
+- **Response Transformation**: Gunakan filter untuk memastikan bahwa semua respons memiliki format yang konsisten.
+- **Logging**: Gunakan filter untuk mencatat informasi kesalahan atau debug.
 
-1. **Buat Filter:**
+#### Langkah-langkah Menggunakan Filters di NestJS
 
-    Buat file baru `http-exception.filter.ts`:
+1. **Membuat Filter Kustom**
+2. **Mendaftarkan Filter**
+3. **Menggunakan Filter dalam Controller atau Global**
 
-    ```typescript
-    import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+#### 5.1. Membuat Filter Kustom
 
-    @Catch()
-    export class HttpExceptionFilter implements ExceptionFilter {
-      catch(exception: unknown, host: ArgumentsHost) {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse();
-        const request = ctx.getRequest();
-        const status = exception instanceof HttpException
-          ? exception.getStatus()
-          : HttpStatus.INTERNAL_SERVER_ERROR;
+Langkah pertama adalah membuat filter baru. Misalkan kita ingin membuat filter yang menangani semua jenis pengecualian dan memberikan respons yang terstruktur.
 
-        response.status(status).json({
-          statusCode: status,
-          timestamp: new Date().toISOString(),
-          path: request.url,
-          message: (exception as any).message || null,
-        });
-      }
+**Langkah-langkah:**
+
+1. Buat direktori `filters` di dalam direktori `cats`.
+
+2. Buat file `http-exception.filter.ts` di dalam direktori `filters`.
+
+3. Tambahkan kode berikut ke `http-exception.filter.ts`:
+
+```typescript
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { Request, Response } from 'express';
+
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+    const status = exception.getStatus();
+
+    const exceptionResponse: any = exception.getResponse();
+    const { message, error } = exceptionResponse;
+
+    response.status(status).json({
+      success: false,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      error,
+      message,
+    });
+  }
+}
+```
+
+Penjelasan:
+- `@Catch(HttpException)` mendekorasi kelas untuk menangkap semua `HttpException`.
+- `catch` adalah metode yang menangani pengecualian dan mengembalikan respons yang terstruktur.
+
+#### 5.2. Mendaftarkan Filter
+
+Filter dapat didaftarkan secara global, dalam modul, atau untuk metode tertentu dalam controller.
+
+#### a. Mendaftarkan Filter secara Global
+
+1. Buka `main.ts`.
+
+2. Modifikasi kode untuk mendaftarkan filter secara global:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './cats/filters/http-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new HttpExceptionFilter());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+Penjelasan:
+- `useGlobalFilters` digunakan untuk mendaftarkan filter secara global sehingga akan diterapkan pada semua rute di aplikasi.
+
+#### b. Menggunakan Filter dalam Controller atau Metode
+
+1. Buka `cats.controller.ts`.
+
+2. Tambahkan kode untuk menggunakan filter di controller atau metode tertentu:
+
+```typescript
+import { Controller, Get, Post, Body, Param, Put, Delete, UseFilters } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
+
+@Controller('cats')
+@UseFilters(HttpExceptionFilter) // Menerapkan filter pada seluruh controller
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Post()
+  create(@Body() createCatDto: Cat) {
+    this.catsService.create(createCatDto);
+    return {
+      message: 'Cat created successfully',
+      success: true,
+      data: createCatDto,
+    };
+  }
+
+  @Get()
+  findAll() {
+    const cats = this.catsService.findAll();
+    return {
+      message: 'Cats retrieved successfully',
+      success: true,
+      data: cats,
+    };
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: number) {
+    const cat = this.catsService.findOne(id);
+    if (!cat) {
+      throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
     }
-    ```
+    return {
+      message: 'Cat retrieved successfully',
+      success: true,
+      data: cat,
+    };
+  }
 
-2. **Gunakan Filter dalam Controller:**
-
-    Modifikasi file `cats.controller.ts`:
-
-    ```typescript
-    import { Controller, Get, Post, Body, Param, Put, Delete, UseFilters } from '@nestjs/common';
-    import { CatsService, Cat } from './cats.service';
-    import { HttpExceptionFilter } from './http-exception.filter';
-
-    @UseFilters(HttpExceptionFilter)
-    @Controller('cats')
-    export class CatsController {
-      // ... kode sebelumnya
+  @Put(':id')
+  update(@Param('id') id: number, @Body() updateCatDto: Partial<Cat>) {
+    const cat = this.catsService.findOne(id);
+    if (!cat) {
+      throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
     }
-    ```
+    this.catsService.update(id, updateCatDto);
+    return {
+      message: 'Cat updated successfully',
+      success: true,
+      data: this.catsService.findOne(id),
+    };
+  }
 
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    const cat = this.catsService.findOne(id);
+    if (!cat) {
+      throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+    }
+    this.catsService.remove(id);
+    return {
+      message: 'Cat removed successfully',
+      success: true,
+      data: cat,
+    };
+  }
+}
+```
+
+Penjelasan:
+- `@UseFilters` digunakan untuk menerapkan filter pada controller atau metode tertentu.
+
+#### 5.3. Menguji Filter
+
+Untuk memastikan filter berfungsi dengan baik, kita bisa menggunakan Postman atau Thunder Client untuk mengirim permintaan ke server kita.
+
+**Langkah-langkah:**
+
+1. Jalankan aplikasi NestJS Anda:
+   ```bash
+   npm run start
+   ```
+
+2. Buka Postman atau Thunder Client.
+
+3. Kirim permintaan GET ke `http://localhost:3000/cats/999` (ID yang tidak ada).
+
+4. Anda akan mendapatkan respons dengan status 404 Not Found:
+
+```json
+{
+  "success": false,
+  "timestamp": "2024-07-02T12:34:56.789Z",
+  "path": "/cats/999",
+  "error": "Not Found",
+  "message": "Cat not found"
+}
+```
+
+Penjelasan:
+- Filter menangkap pengecualian `HttpException` dan mengembalikan respons yang terstruktur.
+
+#### Contoh Kode Lengkap
+
+**http-exception.filter.ts:**
+
+```typescript
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { Request, Response } from 'express';
+
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+    const status = exception.getStatus();
+
+    const exceptionResponse: any = exception.getResponse();
+    const { message, error } = exceptionResponse;
+
+    response.status(status).json({
+      success: false,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      error,
+      message,
+    });
+  }
+}
+```
+
+**main.ts (Global Filter):**
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './cats/filters/http-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new HttpExceptionFilter());
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+**cats.controller.ts (Controller-level Filter):**
+
+```typescript
+import { Controller, Get, Post, Body, Param, Put, Delete, UseFilters } from '@nestjs/common';
+import { CatsService, Cat } from './cats.service';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
+
+@Controller('cats')
+@UseFilters(HttpExceptionFilter)
+export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Post()
+  create(@Body() createCatDto: Cat) {
+    this.catsService.create(createCatDto);
+    return {
+      message: 'Cat created successfully',
+      success: true,
+      data: createCatDto,
+    };
+  }
+
+  @Get()
+  findAll() {
+    const cats = this.catsService.findAll();
+    return {
+      message: 'Cats retrieved successfully',
+      success: true,
+      data: cats,
+    };
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: number) {
+    const cat = this.catsService.findOne(id);
+    if (!cat) {
+      throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+    }
+    return {
+      message: 'Cat retrieved successfully',
+      success: true,
+      data: cat,
+    };
+  }
+
+  @Put(':id')
+  update(@Param('id') id: number, @Body() updateCatDto: Partial<Cat>) {
+    const cat = this.catsService.findOne(id);
+    if (!cat) {
+      throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+    }
+    this.catsService.update(id, updateCatDto);
+    return {
+      message: 'Cat updated successfully',
+      success: true,
+      data: this.catsService.findOne(id),
+    };
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    const cat = this.catsService.findOne(id);
+    if (!cat) {
+      throw new HttpException('Cat not found', HttpStatus.NOT_FOUND);
+    }
+    this.catsService.remove(id);
+    return {
+      message: 'Cat removed successfully',
+      success: true,
+      data: cat,
+    };
+  }
+}
+```
+
+Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tentang bagaimana filters bekerja di NestJS dan bagaimana menggunakannya untuk menangani pengecualian dan memberikan respons yang lebih terstruktur dalam aplikasi Anda.
+ 
 ### 6. Database dengan TypeORM
 
 TypeORM adalah ORM yang bekerja sangat baik dengan NestJS untuk mengelola koneksi ke database dan operasi CRUD.
