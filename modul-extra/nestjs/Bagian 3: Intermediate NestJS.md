@@ -14,6 +14,13 @@ Pada bagian ini, kita akan mendalami konsep-konsep lebih lanjut yang akan memban
 
 Middleware di NestJS adalah fungsi yang dijalankan sebelum handler rute. Middleware dapat melakukan berbagai tugas seperti logging, autentikasi, atau modifikasi objek permintaan dan respons.
 
+#### Kapan Menggunakan Middleware
+- **Pre-processing**: Saat Anda perlu memproses permintaan sebelum mencapai route handler, seperti logging, otentikasi, atau parsing body.
+- **Post-processing**: Saat Anda perlu memproses respons sebelum dikirim kembali ke klien.
+- **Global**: Middleware sering diterapkan di seluruh aplikasi untuk fungsi yang perlu dijalankan untuk setiap permintaan, seperti CORS atau rate limiting.
+- **Kustomisasi**: Jika Anda memiliki logika umum yang perlu diterapkan di banyak endpoint, middleware adalah tempat yang tepat untuk itu.
+
+
 #### Penggunaan Middleware di NestJS
 
 1. **Membuat Middleware**
@@ -166,6 +173,12 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 ### 2. Interceptors
 
 Interceptors di NestJS adalah kelas yang memungkinkan Anda mengganggu atau memodifikasi aliran permintaan atau respons di aplikasi Anda. Mereka bisa digunakan untuk berbagai tujuan seperti logging, transformasi data, cache, dan lainnya.
+
+#### Kapan Menggunakan Interceptor
+- **Pre-processing dan Post-processing**: Interceptor memungkinkan Anda memanipulasi permintaan sebelum mencapai handler dan respons setelah handler memprosesnya.
+- **Transformasi Data**: Gunakan interceptor untuk mengubah data respons dalam cara yang seragam.
+- **Error Handling**: Interceptor dapat menangkap kesalahan yang terjadi selama eksekusi dan mengubah atau menangani kesalahan tersebut sebelum dikirim ke klien.
+- **Cross-Cutting Concerns**: Untuk logika lintas-cutter seperti logging, caching, atau otentikasi yang perlu diterapkan di berbagai titik dalam aplikasi.
 
 #### Penggunaan Interceptors di NestJS
 
@@ -397,6 +410,12 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 ### 3. Guards
 
 Guards di NestJS digunakan untuk menentukan apakah permintaan tertentu harus diproses oleh route handler atau tidak. Mereka sangat berguna untuk otentikasi dan otorisasi. Guards berfungsi seperti middleware tetapi memiliki prioritas yang lebih tinggi dan dapat digunakan untuk mengontrol alur permintaan berdasarkan logika tertentu.
+
+#### Kapan Menggunakan Guards
+- **Otorisasi Pengguna**: Gunakan guards untuk memeriksa apakah pengguna memiliki izin atau hak akses yang diperlukan untuk mengakses rute tertentu.
+- **Otentikasi Pengguna**: Gunakan guards untuk memastikan bahwa pengguna sudah terotentikasi sebelum mengizinkan akses ke rute tertentu.
+- **Validasi Kondisi Khusus**: Gunakan guards untuk memvalidasi kondisi khusus yang perlu dipenuhi sebelum mengizinkan akses ke rute tertentu. seperti waktu, status pengguna dsb
+- **Penggunaan Metadata**: Gunakan guards bersama dengan metadata untuk menentukan logika otorisasi yang dinamis.
 
 #### Langkah-langkah Menggunakan Guards di NestJS
 
@@ -656,9 +675,14 @@ Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tent
 
 ### 4. Pipes
 
-### Bagian 3: Intermediate NestJS - Pipes
-
 Pipes di NestJS digunakan untuk melakukan transformasi dan validasi pada data yang masuk ke handler. Mereka sangat berguna untuk memastikan bahwa data yang diterima sesuai dengan harapan sebelum diproses lebih lanjut.
+
+#### Kapan Menggunakan Pipes
+- **Validasi Data**: Gunakan pipes untuk memvalidasi data masuk sesuai dengan DTO atau skema validasi lain.
+- **Transformasi Data**: Gunakan pipes untuk mentransformasi data, seperti mengubah string menjadi integer, objek, atau tipe data lain yang diperlukan.
+- **Global vs. Lokal**: Gunakan pipes global untuk kebutuhan validasi dan transformasi yang konsisten di seluruh aplikasi. Gunakan pipes lokal untuk kebutuhan khusus di controller atau handler tertentu.
+- **Kustomisasi**: Buat custom pipes jika Anda memiliki kebutuhan validasi atau transformasi data yang tidak bisa dipenuhi oleh pipes bawaan NestJS.
+
 
 #### Langkah-langkah Menggunakan Pipes di NestJS
 
@@ -913,14 +937,6 @@ export class CatsController {
 ```
 
 Dengan penjelasan ini, Anda sekarang memiliki pemahaman yang lebih mendalam tentang bagaimana pipes bekerja di NestJS dan bagaimana menggunakannya untuk menambahkan fitur validasi dan transformasi ke aplikasi Anda.
-
-#### Kapan Menggunakan Pipes
-- **Validasi Data**: Gunakan pipes untuk memvalidasi data masuk sesuai dengan DTO atau skema validasi lain.
-- **Transformasi Data**: Gunakan pipes untuk mentransformasi data, seperti mengubah string menjadi integer, objek, atau tipe data lain yang diperlukan.
-- **Global vs. Lokal**: Gunakan pipes global untuk kebutuhan validasi dan transformasi yang konsisten di seluruh aplikasi. Gunakan pipes lokal untuk kebutuhan khusus di controller atau handler tertentu.
-- **Kustomisasi**: Buat custom pipes jika Anda memiliki kebutuhan validasi atau transformasi data yang tidak bisa dipenuhi oleh pipes bawaan NestJS.
-
-Dengan memahami kapan dan bagaimana menggunakan pipes, Anda bisa memastikan bahwa data yang masuk ke aplikasi Anda selalu sesuai dan dalam format yang benar, sehingga meningkatkan keandalan dan keamanan aplikasi Anda.
 
 ### 5. Filters
 
