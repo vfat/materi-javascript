@@ -3,6 +3,8 @@ import { CatsService } from './cats.service';
 import { Cat } from './entities/cat.entity';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { ValidateCatPipe } from './pipes/validate-cat.pipe';
+import { CreateCatDto } from './dto/create-cat.dto';
+import { UpdateCatDto } from './dto/update-cat.dto';
 
 @Controller('cats')
 @UseInterceptors(LoggingInterceptor) // Menerapkan interceptor pada seluruh controller
@@ -11,7 +13,7 @@ export class CatsController {
 
   @Post()
   @UsePipes(ValidateCatPipe)
-  create(@Body() createCatDto: Cat) {
+  create(@Body() createCatDto: CreateCatDto) {
     try {
       this.catsService.create(createCatDto);
       return {
@@ -68,7 +70,8 @@ export class CatsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() updateCatDto: Partial<Cat>) {
+  @UsePipes(ValidateCatPipe)
+  update(@Param('id') id: number, @Body() updateCatDto: UpdateCatDto) {
     try {
       const cat = this.catsService.findOne(id);
       if (!cat) {
