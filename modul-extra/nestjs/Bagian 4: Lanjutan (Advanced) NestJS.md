@@ -253,8 +253,6 @@ Dengan langkah-langkah ini, Anda telah mengintegrasikan NestJS dengan database m
 #### 2. GraphQL
 GraphQL adalah bahasa query untuk API yang memungkinkan klien untuk meminta data yang mereka butuhkan dengan lebih efisien.
 
-Tentu! Berikut adalah langkah-langkah terperinci untuk memulai proyek baru NestJS dengan integrasi GraphQL.
-
 #### 2.1. Buat Proyek Baru NestJS
 
 Mulai dengan membuat proyek baru menggunakan CLI NestJS:
