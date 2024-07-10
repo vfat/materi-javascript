@@ -639,49 +639,291 @@ Dengan mengikuti langkah-langkah ini, Anda dapat memastikan bahwa aplikasi NestJ
 Dengan mengikuti langkah-langkah ini, Anda sekarang memiliki aplikasi NestJS yang terintegrasi dengan GraphQL. Anda dapat melanjutkan dengan menambahkan fitur tambahan dan menyesuaikan skema GraphQL sesuai kebutuhan Anda.
 
 #### 3. Microservices
-Microservices adalah arsitektur yang memisahkan aplikasi menjadi layanan-layanan kecil yang bisa dikembangkan, dideploy, dan diskalakan secara independen.
 
-**Membuat Microservice:**
+Microservices adalah arsitektur yang membagi aplikasi menjadi layanan-layanan kecil yang dapat dikembangkan, dideploy, dan diskalakan secara independen. NestJS mendukung pengembangan aplikasi microservices dengan baik. Berikut adalah langkah-langkah untuk membuat project baru dengan microservices menggunakan NestJS.
 
-**Instalasi Paket Microservices:**
+#### 3.1: Membuat Project Baru
+
+Buat project baru untuk layanan utama dan layanan mikroservice.
 
 ```bash
-npm install --save @nestjs/microservices
+nest new main-service
+nest new microservice
 ```
 
-**Konfigurasi Microservice:**
+#### 3.2: Mengonfigurasi Microservice
+
+#### 3.2.1. Layanan Utama (Main Service)
+
+Instal dependensi yang diperlukan untuk berkomunikasi dengan microservices. Misalnya, jika menggunakan Redis sebagai transport layer:
+
+```bash
+cd main-service
+npm install --save @nestjs/microservices redis
+```
+
+Buka file `main.ts` dan tambahkan konfigurasi untuk menghubungkan ke microservice.
 
 ```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const microserviceOptions: MicroserviceOptions = {
+    transport: Transport.REDIS,
+    options: {
+      url: 'redis://localhost:6379',
+    },
+  };
+
+  app.connectMicroservice(microserviceOptions);
+
+  await app.startAllMicroservices();
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+#### 3.2.2. Layanan Microservice
+
+Instal dependensi yang diperlukan.
+
+```bash
+cd ../microservice
+npm install --save @nestjs/microservices redis
+```
+
+Buka file `main.ts` di dalam folder `microservice` dan tambahkan konfigurasi untuk microservice.
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.REDIS,
+      options: {
+        url: 'redis://localhost:6379',
+      },
+    },
+  );
+  await app.listen();
+}
+bootstrap();
+```
+
+#### 3.3: Membuat Handler di Layanan Microservice
+
+Di layanan microservice, buat handler untuk mengelola pesan dari layanan utama.
+
+#### 3.3.1. Module dan Service
+
+Buat module dan service untuk microservice.
+
+```typescript
+// src/microservice/microservice.module.ts
+import { Module } from '@nestjs/common';
+import { MicroserviceController } from './microservice.controller';
+import { MicroserviceService } from './microservice.service';
+
+@Module({
+  controllers: [MicroserviceController],
+  providers: [MicroserviceService],
+})
+export class MicroserviceModule {}
+
+// src/microservice/microservice.service.ts
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class MicroserviceService {
+  getHello(): string {
+    return 'Hello from Microservice!';
+  }
+}
+
+// src/microservice/microservice.controller.ts
+import { Controller } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
+import { MicroserviceService } from './microservice.service';
+
+@Controller()
+export class MicroserviceController {
+  constructor(private readonly microserviceService: MicroserviceService) {}
+
+  @MessagePattern({ cmd: 'hello' })
+  getHello(): string {
+    return this.microserviceService.getHello();
+  }
+}
+```
+
+#### 3.4: Mengirim Pesan dari Layanan Utama ke Microservice
+
+Di layanan utama, buat service untuk mengirim pesan ke microservice.
+
+#### 3.4.1. Module dan Service
+
+Tambahkan konfigurasi di layanan utama untuk mengirim pesan ke microservice.
+
+```typescript
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CatsService } from './cats.service';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
     ClientsModule.register([
-      { name: 'CATS_SERVICE', transport: Transport.TCP },
+      {
+        name: 'MICROSERVICE',
+        transport: Transport.REDIS,
+        options: {
+          url: 'redis://localhost:6379',
+        },
+      },
     ]),
   ],
-  providers: [CatsService],
+  controllers: [AppController],
+  providers: [AppService],
 })
-export class CatsModule {}
-```
+export class AppModule {}
 
-**Komunikasi Antar Microservices:**
-
-```typescript
-import { Injectable, Inject } from '@nestjs/common';
+// src/app.service.ts
+import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
-export class CatsService {
-  constructor(@Inject('CATS_SERVICE') private client: ClientProxy) {}
+export class AppService {
+  constructor(
+    @Inject('MICROSERVICE') private readonly client: ClientProxy,
+  ) {}
 
-  createCat(cat) {
-    return this.client.send({ cmd: 'createCat' }, cat);
+  async getHello(): Promise<string> {
+    const response = await this.client.send<string>({ cmd: 'hello' }, {}).toPromise();
+    return response;
+  }
+}
+
+// src/app.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): Promise<string> {
+    return this.appService.getHello();
   }
 }
 ```
+
+#### 3.5: Menjalankan Aplikasi
+
+Jalankan layanan utama dan microservice secara bersamaan.
+
+#### 3.5.1. Menjalankan Layanan Utama
+
+```bash
+cd main-service
+npm run start
+```
+
+#### 3.5.2. Menjalankan Layanan Microservice
+
+```bash
+cd ../microservice
+npm run start
+```
+
+#### 3.6: Menguji Aplikasi
+
+Akses endpoint layanan utama dengan mengirimkan permintaan GET ke `http://localhost:3000` menggunakan browser, Postman, atau alat pengujian lainnya. Anda harus menerima respon "Hello from Microservice!" yang berasal dari layanan microservice.
+
+#### 3.7: Menulis Unit Test untuk Microservices
+
+#### 3.7.1. Unit Test untuk Layanan Utama
+
+Buat file `src/app.service.spec.ts` di dalam folder `main-service` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppService } from './app.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+
+describe('AppService', () => {
+  let service: AppService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ClientsModule.register([
+          {
+            name: 'MICROSERVICE',
+            transport: Transport.REDIS,
+            options: {
+              url: 'redis://localhost:6379',
+            },
+          },
+        ]),
+      ],
+      providers: [AppService],
+    }).compile();
+
+    service = module.get<AppService>(AppService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should return hello message', async () => {
+    const result = 'Hello from Microservice!';
+    jest.spyOn(service, 'getHello').mockImplementation(async () => result);
+    expect(await service.getHello()).toBe(result);
+  });
+});
+```
+
+#### 3.7.2. Unit Test untuk Layanan Microservice
+
+Buat file `src/microservice/microservice.service.spec.ts` di dalam folder `microservice` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { MicroserviceService } from './microservice.service';
+
+describe('MicroserviceService', () => {
+  let service: MicroserviceService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [MicroserviceService],
+    }).compile();
+
+    service = module.get<MicroserviceService>(MicroserviceService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should return hello message', () => {
+    expect(service.getHello()).toBe('Hello from Microservice!');
+  });
+});
+```
+
+Dengan mengikuti langkah-langkah ini, Anda dapat membangun dan menguji aplikasi NestJS berbasis microservices yang dapat diskalakan dan dikelola secara independen.
 
 #### 4. Testing
 Testing adalah bagian penting dalam pembangunan aplikasi untuk memastikan kode berfungsi sesuai dengan yang diharapkan.
