@@ -253,25 +253,39 @@ Dengan langkah-langkah ini, Anda telah mengintegrasikan NestJS dengan database m
 #### 2. GraphQL
 GraphQL adalah bahasa query untuk API yang memungkinkan klien untuk meminta data yang mereka butuhkan dengan lebih efisien.
 
-**Menggunakan GraphQL dengan NestJS:**
+#### 2.1. Buat Proyek Baru NestJS
 
-**Instalasi Paket GraphQL:**
+Mulai dengan membuat proyek baru menggunakan CLI NestJS:
 
 ```bash
-npm install --save @nestjs/graphql graphql-tools graphql
+npx @nestjs/cli new my-nestjs-graphql-project
+cd my-nestjs-graphql-project
 ```
 
-**Konfigurasi GraphQL:**
+#### 2.2. Instalasi Paket yang Diperlukan
+
+Instal paket yang diperlukan untuk menggunakan GraphQL dengan NestJS:
+
+```bash
+npm install @nestjs/graphql @nestjs/apollo graphql apollo-server-express
+```
+
+#### 2.3. Konfigurasi GraphQL di AppModule
+
+Buka `src/app.module.ts` dan konfigurasikan GraphQL:
 
 ```typescript
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 import { CatsModule } from './cats/cats.module';
 
 @Module({
   imports: [
-    GraphQLModule.forRoot({
-      autoSchemaFile: 'schema.gql',
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
     }),
     CatsModule,
   ],
@@ -279,81 +293,638 @@ import { CatsModule } from './cats/cats.module';
 export class AppModule {}
 ```
 
-**Membuat Schema dan Resolver:**
+#### 2.4. Membuat Module, Service, dan Resolver untuk Cats
+
+#### 2.4.1. Buat Module dan Service
+
+Gunakan CLI NestJS untuk membuat module dan service:
+
+```bash
+npx @nestjs/cli g module cats
+npx @nestjs/cli g service cats
+npx @nestjs/cli g resolver cats
+```
+
+#### 2.4.2. Definisikan Entity/Model Cat
+
+Buat file `src/cats/entities/cat.entity.ts`:
 
 ```typescript
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { CatsService } from './cats.service';
-import { Cat } from './cat.entity';
+export class Cat {
+  id: number;
+  name: string;
+  age: number;
+  breed: string;
+}
+```
 
-@Resolver(of => Cat)
-export class CatsResolver {
-  constructor(private catsService: CatsService) {}
+#### 2.4.3. Implementasi Service
 
-  @Query(returns => [Cat])
-  async cats() {
-    return this.catsService.findAll();
+Edit `src/cats/cats.service.ts`:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { Cat } from './entities/cat.entity';
+
+@Injectable()
+export class CatsService {
+  private readonly cats: Cat[] = [];
+
+  create(cat: Cat): Cat {
+    this.cats.push(cat);
+    return cat;
   }
 
-  @Mutation(returns => Cat)
-  async addCat(
-    @Args('name') name: string,
-    @Args('age') age: number,
-    @Args('breed') breed: string,
-  ) {
+  findAll(): Cat[] {
+    return this.cats;
+  }
+
+  findOne(id: number): Cat {
+    return this.cats.find(cat => cat.id === id);
+  }
+
+  update(id: number, updateCatDto: Partial<Cat>): Cat {
+    const catIndex = this.cats.findIndex(cat => cat.id === id);
+    if (catIndex !== -1) {
+      this.cats[catIndex] = { ...this.cats[catIndex], ...updateCatDto };
+    }
+    return this.cats[catIndex];
+  }
+
+  remove(id: number): void {
+    const catIndex = this.cats.findIndex(cat => cat.id === id);
+    if (catIndex !== -1) {
+      this.cats.splice(catIndex, 1);
+    }
+  }
+}
+```
+
+#### 2.4.4. Implementasi Resolver
+
+Edit `src/cats/cats.resolver.ts`:
+
+```typescript
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+
+@Resolver(() => Cat)
+export class CatsResolver {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Mutation(() => Cat)
+  createCat(@Args('id', { type: () => Int }) id: number, @Args('name') name: string, @Args('age', { type: () => Int }) age: number, @Args('breed') breed: string): Cat {
     const cat = new Cat();
+    cat.id = id;
     cat.name = name;
     cat.age = age;
     cat.breed = breed;
     return this.catsService.create(cat);
   }
+
+  @Query(() => [Cat], { name: 'cats' })
+  findAll(): Cat[] {
+    return this.catsService.findAll();
+  }
+
+  @Query(() => Cat, { name: 'cat' })
+  findOne(@Args('id', { type: () => Int }) id: number): Cat {
+    return this.catsService.findOne(id);
+  }
+
+  @Mutation(() => Cat)
+  updateCat(@Args('id', { type: () => Int }) id: number, @Args('name') name: string, @Args('age', { type: () => Int }) age: number, @Args('breed') breed: string): Cat {
+    return this.catsService.update(id, { name, age, breed });
+  }
+
+  @Mutation(() => Boolean)
+  removeCat(@Args('id', { type: () => Int }) id: number): boolean {
+    this.catsService.remove(id);
+    return true;
+  }
 }
 ```
 
-#### 3. Microservices
-Microservices adalah arsitektur yang memisahkan aplikasi menjadi layanan-layanan kecil yang bisa dikembangkan, dideploy, dan diskalakan secara independen.
+#### 2.4.5. Update Entity untuk GraphQL
 
-**Membuat Microservice:**
-
-**Instalasi Paket Microservices:**
-
-```bash
-npm install --save @nestjs/microservices
-```
-
-**Konfigurasi Microservice:**
+Edit `src/cats/entities/cat.entity.ts` untuk mendukung GraphQL:
 
 ```typescript
+import { ObjectType, Field, Int } from '@nestjs/graphql';
+
+@ObjectType()
+export class Cat {
+  @Field(() => Int)
+  id: number;
+
+  @Field()
+  name: string;
+
+  @Field(() => Int)
+  age: number;
+
+  @Field()
+  breed: string;
+}
+```
+
+#### 2.5. Menjalankan Aplikasi
+
+Sekarang Anda siap untuk menjalankan aplikasi Anda. Jalankan:
+
+Setelah menjalankan aplikasi NestJS yang terintegrasi dengan GraphQL, Anda dapat melakukan berbagai hal untuk menguji dan memastikan bahwa aplikasi berjalan dengan benar. Berikut adalah beberapa langkah yang dapat Anda ambil untuk menguji aplikasi Anda.
+
+#### 2.5.1. Mengakses GraphQL Playground
+
+GraphQL Playground adalah antarmuka pengguna yang memungkinkan Anda mengirim query, mutation, dan subscription ke server GraphQL Anda.
+
+- Buka browser dan navigasikan ke `http://localhost:3000/graphql`.
+- Anda akan melihat antarmuka GraphQL Playground di mana Anda dapat mengirim query dan mutation.
+
+#### 2.5.2. Mengirim Query dan Mutation
+
+Gunakan GraphQL Playground untuk mengirim query dan mutation dan memastikan bahwa API Anda berfungsi dengan benar.
+
+#### Contoh Mutation: Membuat Cat
+
+```graphql
+mutation {
+  createCat(id:1, name: "Whiskers", age: 2, breed: "Siamese") {
+    id
+    name
+    age
+    breed
+  }
+}
+```
+
+#### Contoh Query: Mendapatkan Semua Cats
+
+```graphql
+query {
+  cats {
+    id
+    name
+    age
+    breed
+  }
+}
+```
+
+#### Contoh Query: Mendapatkan Cat berdasarkan ID
+
+```graphql
+query {
+  cat(id: 1) {
+    id
+    name
+    age
+    breed
+  }
+}
+```
+
+#### 2.5.3. Menguji dengan Unit Testing
+
+NestJS mendukung unit testing menggunakan Jest. Anda dapat menulis tes untuk memastikan bahwa layanan dan resolver Anda bekerja dengan benar.
+
+#### 2.5.3.1. Membuat Unit Test untuk Service
+
+Buat file `src/cats/cats.service.spec.ts` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+
+describe('CatsService', () => {
+  let service: CatsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CatsService],
+    }).compile();
+
+    service = module.get<CatsService>(CatsService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should create a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    expect(service.findAll()).toContain(cat);
+  });
+
+  it('should return all cats', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    expect(service.findAll()).toEqual([cat]);
+  });
+
+  it('should find a cat by id', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    expect(service.findOne(1)).toEqual(cat);
+  });
+
+  it('should update a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    const updatedCat = service.update(1, { age: 4 });
+    expect(updatedCat.age).toEqual(4);
+  });
+
+  it('should remove a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    service.remove(1);
+    expect(service.findAll()).not.toContain(cat);
+  });
+});
+```
+
+#### 2.5.3.2. Membuat Unit Test untuk Resolver
+
+Buat file `src/cats/cats.resolver.spec.ts` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { CatsResolver } from './cats.resolver';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+
+describe('CatsResolver', () => {
+  let resolver: CatsResolver;
+  let service: CatsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatsResolver,
+        {
+          provide: CatsService,
+          useValue: {
+            create: jest.fn(),
+            findAll: jest.fn(),
+            findOne: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    resolver = module.get<CatsResolver>(CatsResolver);
+    service = module.get<CatsService>(CatsService);
+  });
+
+  it('should be defined', () => {
+    expect(resolver).toBeDefined();
+  });
+
+  it('should create a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'create').mockImplementation(() => cat);
+    expect(resolver.createCat('Tom', 3, 'Siamese')).toEqual(cat);
+  });
+
+  it('should return all cats', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'findAll').mockImplementation(() => [cat]);
+    expect(resolver.findAll()).toEqual([cat]);
+  });
+
+  it('should find a cat by id', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'findOne').mockImplementation(() => cat);
+    expect(resolver.findOne(1)).toEqual(cat);
+  });
+
+  it('should update a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'update').mockImplementation(() => ({ ...cat, age: 4 }));
+    expect(resolver.updateCat(1, 'Tom', 4, 'Siamese')).toEqual({ ...cat, age: 4 });
+  });
+
+  it('should remove a cat', () => {
+    jest.spyOn(service, 'remove').mockImplementation(() => true);
+    expect(resolver.removeCat(1)).toEqual(true);
+  });
+});
+```
+
+#### 2.5.4. Menjalankan Tes
+
+Anda dapat menjalankan semua tes yang telah Anda tulis dengan perintah berikut:
+
+```bash
+npm run test
+```
+
+#### 2.5.5. Menggunakan Tools Pengujian Lainnya
+
+#### 2.5.5.1. Postman
+
+Postman adalah alat yang bagus untuk menguji endpoint GraphQL. Anda dapat mengirim query dan mutation ke endpoint GraphQL Anda (`http://localhost:3000/graphql`) dan memeriksa respons yang diterima.
+
+#### 2.5.5.2. Insomnia
+
+Insomnia adalah alat lain yang mirip dengan Postman dan mendukung GraphQL. Anda dapat menggunakannya untuk mengirim query dan mutation serta memeriksa respons dari server GraphQL Anda.
+
+Dengan mengikuti langkah-langkah ini, Anda dapat memastikan bahwa aplikasi NestJS Anda yang terintegrasi dengan GraphQL berjalan dengan baik dan memenuhi kebutuhan Anda. Anda juga dapat menulis dan menjalankan tes untuk memverifikasi bahwa setiap bagian dari aplikasi Anda berfungsi seperti yang diharapkan.
+
+Dengan mengikuti langkah-langkah ini, Anda sekarang memiliki aplikasi NestJS yang terintegrasi dengan GraphQL. Anda dapat melanjutkan dengan menambahkan fitur tambahan dan menyesuaikan skema GraphQL sesuai kebutuhan Anda.
+
+#### 3. Microservices
+
+Microservices adalah arsitektur yang membagi aplikasi menjadi layanan-layanan kecil yang dapat dikembangkan, dideploy, dan diskalakan secara independen. NestJS mendukung pengembangan aplikasi microservices dengan baik. Berikut adalah langkah-langkah untuk membuat project baru dengan microservices menggunakan NestJS.
+
+#### 3.1: Membuat Project Baru
+
+Buat project baru untuk layanan utama dan layanan mikroservice.
+
+```bash
+nest new main-service
+nest new microservice
+```
+
+#### 3.2: Mengonfigurasi Microservice
+
+#### 3.2.1. Layanan Utama (Main Service)
+
+Instal dependensi yang diperlukan untuk berkomunikasi dengan microservices. Misalnya, jika menggunakan Redis sebagai transport layer:
+
+```bash
+cd main-service
+npm install --save @nestjs/microservices redis
+```
+
+Buka file `main.ts` dan tambahkan konfigurasi untuk menghubungkan ke microservice.
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const microserviceOptions: MicroserviceOptions = {
+    transport: Transport.REDIS,
+    options: {
+      url: 'redis://localhost:6379',
+    },
+  };
+
+  app.connectMicroservice(microserviceOptions);
+
+  await app.startAllMicroservices();
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+#### 3.2.2. Layanan Microservice
+
+Instal dependensi yang diperlukan.
+
+```bash
+cd ../microservice
+npm install --save @nestjs/microservices redis
+```
+
+Buka file `main.ts` di dalam folder `microservice` dan tambahkan konfigurasi untuk microservice.
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.REDIS,
+      options: {
+        url: 'redis://localhost:6379',
+      },
+    },
+  );
+  await app.listen();
+}
+bootstrap();
+```
+
+#### 3.3: Membuat Handler di Layanan Microservice
+
+Di layanan microservice, buat handler untuk mengelola pesan dari layanan utama.
+
+#### 3.3.1. Module dan Service
+
+Buat module dan service untuk microservice.
+
+```typescript
+// src/microservice/microservice.module.ts
+import { Module } from '@nestjs/common';
+import { MicroserviceController } from './microservice.controller';
+import { MicroserviceService } from './microservice.service';
+
+@Module({
+  controllers: [MicroserviceController],
+  providers: [MicroserviceService],
+})
+export class MicroserviceModule {}
+
+// src/microservice/microservice.service.ts
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class MicroserviceService {
+  getHello(): string {
+    return 'Hello from Microservice!';
+  }
+}
+
+// src/microservice/microservice.controller.ts
+import { Controller } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
+import { MicroserviceService } from './microservice.service';
+
+@Controller()
+export class MicroserviceController {
+  constructor(private readonly microserviceService: MicroserviceService) {}
+
+  @MessagePattern({ cmd: 'hello' })
+  getHello(): string {
+    return this.microserviceService.getHello();
+  }
+}
+```
+
+#### 3.4: Mengirim Pesan dari Layanan Utama ke Microservice
+
+Di layanan utama, buat service untuk mengirim pesan ke microservice.
+
+#### 3.4.1. Module dan Service
+
+Tambahkan konfigurasi di layanan utama untuk mengirim pesan ke microservice.
+
+```typescript
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CatsService } from './cats.service';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
     ClientsModule.register([
-      { name: 'CATS_SERVICE', transport: Transport.TCP },
+      {
+        name: 'MICROSERVICE',
+        transport: Transport.REDIS,
+        options: {
+          url: 'redis://localhost:6379',
+        },
+      },
     ]),
   ],
-  providers: [CatsService],
+  controllers: [AppController],
+  providers: [AppService],
 })
-export class CatsModule {}
-```
+export class AppModule {}
 
-**Komunikasi Antar Microservices:**
-
-```typescript
-import { Injectable, Inject } from '@nestjs/common';
+// src/app.service.ts
+import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
-export class CatsService {
-  constructor(@Inject('CATS_SERVICE') private client: ClientProxy) {}
+export class AppService {
+  constructor(
+    @Inject('MICROSERVICE') private readonly client: ClientProxy,
+  ) {}
 
-  createCat(cat) {
-    return this.client.send({ cmd: 'createCat' }, cat);
+  async getHello(): Promise<string> {
+    const response = await this.client.send<string>({ cmd: 'hello' }, {}).toPromise();
+    return response;
+  }
+}
+
+// src/app.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): Promise<string> {
+    return this.appService.getHello();
   }
 }
 ```
+
+#### 3.5: Menjalankan Aplikasi
+
+Jalankan layanan utama dan microservice secara bersamaan.
+
+#### 3.5.1. Menjalankan Layanan Utama
+
+```bash
+cd main-service
+npm run start
+```
+
+#### 3.5.2. Menjalankan Layanan Microservice
+
+```bash
+cd ../microservice
+npm run start
+```
+
+#### 3.6: Menguji Aplikasi
+
+Akses endpoint layanan utama dengan mengirimkan permintaan GET ke `http://localhost:3000` menggunakan browser, Postman, atau alat pengujian lainnya. Anda harus menerima respon "Hello from Microservice!" yang berasal dari layanan microservice.
+
+#### 3.7: Menulis Unit Test untuk Microservices
+
+#### 3.7.1. Unit Test untuk Layanan Utama
+
+Buat file `src/app.service.spec.ts` di dalam folder `main-service` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppService } from './app.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+
+describe('AppService', () => {
+  let service: AppService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ClientsModule.register([
+          {
+            name: 'MICROSERVICE',
+            transport: Transport.REDIS,
+            options: {
+              url: 'redis://localhost:6379',
+            },
+          },
+        ]),
+      ],
+      providers: [AppService],
+    }).compile();
+
+    service = module.get<AppService>(AppService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should return hello message', async () => {
+    const result = 'Hello from Microservice!';
+    jest.spyOn(service, 'getHello').mockImplementation(async () => result);
+    expect(await service.getHello()).toBe(result);
+  });
+});
+```
+
+#### 3.7.2. Unit Test untuk Layanan Microservice
+
+Buat file `src/microservice/microservice.service.spec.ts` di dalam folder `microservice` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { MicroserviceService } from './microservice.service';
+
+describe('MicroserviceService', () => {
+  let service: MicroserviceService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [MicroserviceService],
+    }).compile();
+
+    service = module.get<MicroserviceService>(MicroserviceService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should return hello message', () => {
+    expect(service.getHello()).toBe('Hello from Microservice!');
+  });
+});
+```
+
+Dengan mengikuti langkah-langkah ini, Anda dapat membangun dan menguji aplikasi NestJS berbasis microservices yang dapat diskalakan dan dikelola secara independen.
 
 #### 4. Testing
 Testing adalah bagian penting dalam pembangunan aplikasi untuk memastikan kode berfungsi sesuai dengan yang diharapkan.
