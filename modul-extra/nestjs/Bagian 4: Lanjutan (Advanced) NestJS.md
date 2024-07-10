@@ -432,13 +432,33 @@ export class Cat {
 
 Sekarang Anda siap untuk menjalankan aplikasi Anda. Jalankan:
 
-```bash
-npm run start:dev
+Setelah menjalankan aplikasi NestJS yang terintegrasi dengan GraphQL, Anda dapat melakukan berbagai hal untuk menguji dan memastikan bahwa aplikasi berjalan dengan benar. Berikut adalah beberapa langkah yang dapat Anda ambil untuk menguji aplikasi Anda.
+
+#### 2.5.1. Mengakses GraphQL Playground
+
+GraphQL Playground adalah antarmuka pengguna yang memungkinkan Anda mengirim query, mutation, dan subscription ke server GraphQL Anda.
+
+- Buka browser dan navigasikan ke `http://localhost:3000/graphql`.
+- Anda akan melihat antarmuka GraphQL Playground di mana Anda dapat mengirim query dan mutation.
+
+#### 2.5.2. Mengirim Query dan Mutation
+
+Gunakan GraphQL Playground untuk mengirim query dan mutation dan memastikan bahwa API Anda berfungsi dengan benar.
+
+#### Contoh Mutation: Membuat Cat
+
+```graphql
+mutation {
+  createCat(name: "Whiskers", age: 2, breed: "Siamese") {
+    id
+    name
+    age
+    breed
+  }
+}
 ```
 
-Anda dapat mengakses GraphQL Playground di `http://localhost:3000/graphql` dan mulai mengirimkan query dan mutation.
-
-Contoh query:
+#### Contoh Query: Mendapatkan Semua Cats
 
 ```graphql
 query {
@@ -449,9 +469,13 @@ query {
     breed
   }
 }
+```
 
-mutation {
-  createCat(name: "Whiskers", age: 2, breed: "Siamese") {
+#### Contoh Query: Mendapatkan Cat berdasarkan ID
+
+```graphql
+query {
+  cat(id: 1) {
     id
     name
     age
@@ -459,6 +483,158 @@ mutation {
   }
 }
 ```
+
+#### 2.5.3. Menguji dengan Unit Testing
+
+NestJS mendukung unit testing menggunakan Jest. Anda dapat menulis tes untuk memastikan bahwa layanan dan resolver Anda bekerja dengan benar.
+
+#### 2.5.3.1. Membuat Unit Test untuk Service
+
+Buat file `src/cats/cats.service.spec.ts` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+
+describe('CatsService', () => {
+  let service: CatsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CatsService],
+    }).compile();
+
+    service = module.get<CatsService>(CatsService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('should create a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    expect(service.findAll()).toContain(cat);
+  });
+
+  it('should return all cats', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    expect(service.findAll()).toEqual([cat]);
+  });
+
+  it('should find a cat by id', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    expect(service.findOne(1)).toEqual(cat);
+  });
+
+  it('should update a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    const updatedCat = service.update(1, { age: 4 });
+    expect(updatedCat.age).toEqual(4);
+  });
+
+  it('should remove a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    service.create(cat);
+    service.remove(1);
+    expect(service.findAll()).not.toContain(cat);
+  });
+});
+```
+
+#### 2.5.3.2. Membuat Unit Test untuk Resolver
+
+Buat file `src/cats/cats.resolver.spec.ts` dan tambahkan tes berikut:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { CatsResolver } from './cats.resolver';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+
+describe('CatsResolver', () => {
+  let resolver: CatsResolver;
+  let service: CatsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatsResolver,
+        {
+          provide: CatsService,
+          useValue: {
+            create: jest.fn(),
+            findAll: jest.fn(),
+            findOne: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    resolver = module.get<CatsResolver>(CatsResolver);
+    service = module.get<CatsService>(CatsService);
+  });
+
+  it('should be defined', () => {
+    expect(resolver).toBeDefined();
+  });
+
+  it('should create a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'create').mockImplementation(() => cat);
+    expect(resolver.createCat('Tom', 3, 'Siamese')).toEqual(cat);
+  });
+
+  it('should return all cats', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'findAll').mockImplementation(() => [cat]);
+    expect(resolver.findAll()).toEqual([cat]);
+  });
+
+  it('should find a cat by id', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'findOne').mockImplementation(() => cat);
+    expect(resolver.findOne(1)).toEqual(cat);
+  });
+
+  it('should update a cat', () => {
+    const cat: Cat = { id: 1, name: 'Tom', age: 3, breed: 'Siamese' };
+    jest.spyOn(service, 'update').mockImplementation(() => ({ ...cat, age: 4 }));
+    expect(resolver.updateCat(1, 'Tom', 4, 'Siamese')).toEqual({ ...cat, age: 4 });
+  });
+
+  it('should remove a cat', () => {
+    jest.spyOn(service, 'remove').mockImplementation(() => true);
+    expect(resolver.removeCat(1)).toEqual(true);
+  });
+});
+```
+
+#### 2.5.4. Menjalankan Tes
+
+Anda dapat menjalankan semua tes yang telah Anda tulis dengan perintah berikut:
+
+```bash
+npm run test
+```
+
+#### 2.5.5. Menggunakan Tools Pengujian Lainnya
+
+#### 2.5.5.1. Postman
+
+Postman adalah alat yang bagus untuk menguji endpoint GraphQL. Anda dapat mengirim query dan mutation ke endpoint GraphQL Anda (`http://localhost:3000/graphql`) dan memeriksa respons yang diterima.
+
+#### 2.5.5.2. Insomnia
+
+Insomnia adalah alat lain yang mirip dengan Postman dan mendukung GraphQL. Anda dapat menggunakannya untuk mengirim query dan mutation serta memeriksa respons dari server GraphQL Anda.
+
+Dengan mengikuti langkah-langkah ini, Anda dapat memastikan bahwa aplikasi NestJS Anda yang terintegrasi dengan GraphQL berjalan dengan baik dan memenuhi kebutuhan Anda. Anda juga dapat menulis dan menjalankan tes untuk memverifikasi bahwa setiap bagian dari aplikasi Anda berfungsi seperti yang diharapkan.
 
 Dengan mengikuti langkah-langkah ini, Anda sekarang memiliki aplikasi NestJS yang terintegrasi dengan GraphQL. Anda dapat melanjutkan dengan menambahkan fitur tambahan dan menyesuaikan skema GraphQL sesuai kebutuhan Anda.
 
