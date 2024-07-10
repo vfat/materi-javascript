@@ -1,0 +1,21 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Cat {
+  id: Int!
+  name: String!
+  age: Int!
+  breed: String!
+}
+
+type Query {
+  cats: [Cat!]!
+  cat(id: Int!): Cat!
+}
+
+type Mutation {
+  createCat(id: Int!, name: String!, age: Int!, breed: String!): Cat!
+  updateCat(id: Int!, name: String!, age: Int!, breed: String!): Cat!
+  removeCat(id: Int!): Boolean!
+}
