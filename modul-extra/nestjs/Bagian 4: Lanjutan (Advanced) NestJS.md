@@ -374,8 +374,9 @@ export class CatsResolver {
   constructor(private readonly catsService: CatsService) {}
 
   @Mutation(() => Cat)
-  createCat(@Args('name') name: string, @Args('age', { type: () => Int }) age: number, @Args('breed') breed: string): Cat {
+  createCat(@Args('id', { type: () => Int }) id: number, @Args('name') name: string, @Args('age', { type: () => Int }) age: number, @Args('breed') breed: string): Cat {
     const cat = new Cat();
+    cat.id = id;
     cat.name = name;
     cat.age = age;
     cat.breed = breed;
@@ -449,7 +450,7 @@ Gunakan GraphQL Playground untuk mengirim query dan mutation dan memastikan bahw
 
 ```graphql
 mutation {
-  createCat(name: "Whiskers", age: 2, breed: "Siamese") {
+  createCat(id:1, name: "Whiskers", age: 2, breed: "Siamese") {
     id
     name
     age
