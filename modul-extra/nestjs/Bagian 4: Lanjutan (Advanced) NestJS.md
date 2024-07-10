@@ -253,25 +253,41 @@ Dengan langkah-langkah ini, Anda telah mengintegrasikan NestJS dengan database m
 #### 2. GraphQL
 GraphQL adalah bahasa query untuk API yang memungkinkan klien untuk meminta data yang mereka butuhkan dengan lebih efisien.
 
-**Menggunakan GraphQL dengan NestJS:**
+Tentu! Berikut adalah langkah-langkah terperinci untuk memulai proyek baru NestJS dengan integrasi GraphQL.
 
-**Instalasi Paket GraphQL:**
+#### 2.1. Buat Proyek Baru NestJS
+
+Mulai dengan membuat proyek baru menggunakan CLI NestJS:
 
 ```bash
-npm install --save @nestjs/graphql graphql-tools graphql
+npx @nestjs/cli new my-nestjs-graphql-project
+cd my-nestjs-graphql-project
 ```
 
-**Konfigurasi GraphQL:**
+#### 2.2. Instalasi Paket yang Diperlukan
+
+Instal paket yang diperlukan untuk menggunakan GraphQL dengan NestJS:
+
+```bash
+npm install @nestjs/graphql @nestjs/apollo graphql apollo-server-express
+```
+
+#### 2.3. Konfigurasi GraphQL di AppModule
+
+Buka `src/app.module.ts` dan konfigurasikan GraphQL:
 
 ```typescript
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 import { CatsModule } from './cats/cats.module';
 
 @Module({
   imports: [
-    GraphQLModule.forRoot({
-      autoSchemaFile: 'schema.gql',
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
     }),
     CatsModule,
   ],
@@ -279,36 +295,174 @@ import { CatsModule } from './cats/cats.module';
 export class AppModule {}
 ```
 
-**Membuat Schema dan Resolver:**
+#### 2.4. Membuat Module, Service, dan Resolver untuk Cats
+
+#### 2.4.1. Buat Module dan Service
+
+Gunakan CLI NestJS untuk membuat module dan service:
+
+```bash
+npx @nestjs/cli g module cats
+npx @nestjs/cli g service cats
+npx @nestjs/cli g resolver cats
+```
+
+#### 2.4.2. Definisikan Entity/Model Cat
+
+Buat file `src/cats/entities/cat.entity.ts`:
 
 ```typescript
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { CatsService } from './cats.service';
-import { Cat } from './cat.entity';
+export class Cat {
+  id: number;
+  name: string;
+  age: number;
+  breed: string;
+}
+```
 
-@Resolver(of => Cat)
-export class CatsResolver {
-  constructor(private catsService: CatsService) {}
+#### 2.4.3. Implementasi Service
 
-  @Query(returns => [Cat])
-  async cats() {
-    return this.catsService.findAll();
+Edit `src/cats/cats.service.ts`:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { Cat } from './entities/cat.entity';
+
+@Injectable()
+export class CatsService {
+  private readonly cats: Cat[] = [];
+
+  create(cat: Cat): Cat {
+    this.cats.push(cat);
+    return cat;
   }
 
-  @Mutation(returns => Cat)
-  async addCat(
-    @Args('name') name: string,
-    @Args('age') age: number,
-    @Args('breed') breed: string,
-  ) {
+  findAll(): Cat[] {
+    return this.cats;
+  }
+
+  findOne(id: number): Cat {
+    return this.cats.find(cat => cat.id === id);
+  }
+
+  update(id: number, updateCatDto: Partial<Cat>): Cat {
+    const catIndex = this.cats.findIndex(cat => cat.id === id);
+    if (catIndex !== -1) {
+      this.cats[catIndex] = { ...this.cats[catIndex], ...updateCatDto };
+    }
+    return this.cats[catIndex];
+  }
+
+  remove(id: number): void {
+    const catIndex = this.cats.findIndex(cat => cat.id === id);
+    if (catIndex !== -1) {
+      this.cats.splice(catIndex, 1);
+    }
+  }
+}
+```
+
+#### 2.4.4. Implementasi Resolver
+
+Edit `src/cats/cats.resolver.ts`:
+
+```typescript
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { CatsService } from './cats.service';
+import { Cat } from './entities/cat.entity';
+
+@Resolver(() => Cat)
+export class CatsResolver {
+  constructor(private readonly catsService: CatsService) {}
+
+  @Mutation(() => Cat)
+  createCat(@Args('name') name: string, @Args('age', { type: () => Int }) age: number, @Args('breed') breed: string): Cat {
     const cat = new Cat();
     cat.name = name;
     cat.age = age;
     cat.breed = breed;
     return this.catsService.create(cat);
   }
+
+  @Query(() => [Cat], { name: 'cats' })
+  findAll(): Cat[] {
+    return this.catsService.findAll();
+  }
+
+  @Query(() => Cat, { name: 'cat' })
+  findOne(@Args('id', { type: () => Int }) id: number): Cat {
+    return this.catsService.findOne(id);
+  }
+
+  @Mutation(() => Cat)
+  updateCat(@Args('id', { type: () => Int }) id: number, @Args('name') name: string, @Args('age', { type: () => Int }) age: number, @Args('breed') breed: string): Cat {
+    return this.catsService.update(id, { name, age, breed });
+  }
+
+  @Mutation(() => Boolean)
+  removeCat(@Args('id', { type: () => Int }) id: number): boolean {
+    this.catsService.remove(id);
+    return true;
+  }
 }
 ```
+
+#### 2.4.5. Update Entity untuk GraphQL
+
+Edit `src/cats/entities/cat.entity.ts` untuk mendukung GraphQL:
+
+```typescript
+import { ObjectType, Field, Int } from '@nestjs/graphql';
+
+@ObjectType()
+export class Cat {
+  @Field(() => Int)
+  id: number;
+
+  @Field()
+  name: string;
+
+  @Field(() => Int)
+  age: number;
+
+  @Field()
+  breed: string;
+}
+```
+
+#### 2.5. Menjalankan Aplikasi
+
+Sekarang Anda siap untuk menjalankan aplikasi Anda. Jalankan:
+
+```bash
+npm run start:dev
+```
+
+Anda dapat mengakses GraphQL Playground di `http://localhost:3000/graphql` dan mulai mengirimkan query dan mutation.
+
+Contoh query:
+
+```graphql
+query {
+  cats {
+    id
+    name
+    age
+    breed
+  }
+}
+
+mutation {
+  createCat(name: "Whiskers", age: 2, breed: "Siamese") {
+    id
+    name
+    age
+    breed
+  }
+}
+```
+
+Dengan mengikuti langkah-langkah ini, Anda sekarang memiliki aplikasi NestJS yang terintegrasi dengan GraphQL. Anda dapat melanjutkan dengan menambahkan fitur tambahan dan menyesuaikan skema GraphQL sesuai kebutuhan Anda.
 
 #### 3. Microservices
 Microservices adalah arsitektur yang memisahkan aplikasi menjadi layanan-layanan kecil yang bisa dikembangkan, dideploy, dan diskalakan secara independen.
