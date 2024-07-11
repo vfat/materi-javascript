@@ -860,63 +860,79 @@ Dengan mengikuti langkah-langkah di atas, Anda telah berhasil membuat, mengonfig
 
 #### 3.2. Microservices dengan Redis
 
-#### 3.2.1. Langkah-langkah Membuat Proyek Mikroservis dengan NestJS
+Menggunakan Docker untuk menjalankan Redis membuat setup lebih mudah dan terisolasi dari sistem utama Anda. Berikut adalah panduan langkah demi langkah untuk membuat dan mengonfigurasi mikroservis dengan menggunakan Redis di NestJS, dengan Redis berjalan di Docker.
+
+#### 3.2.1. Langkah-langkah Membuat Proyek Mikroservis dengan NestJS menggunakan Redis dan Docker
 
 1. **Membuat Proyek Baru**
-   
-   Buat proyek baru menggunakan CLI NestJS:
+
+   Buat dua proyek baru menggunakan CLI NestJS:
    ```bash
-   nest new microservice-project
+   nest new main-service
+   nest new microservice
    ```
 
-2. **Menyiapkan Redis**
+2. **Instalasi Redis**
 
-   Pastikan Anda sudah menginstal Redis di sistem Anda. Jika belum, ikuti langkah-langkah di bawah ini untuk menginstalnya:
-
-   - **Menginstal Redis di macOS menggunakan Homebrew:**
-     ```bash
-     brew install redis
-     ```
-
-   - **Menginstal Redis di Ubuntu:**
-     ```bash
-     sudo apt update
-     sudo apt install redis-server
-     ```
-
-   - **Menginstal Redis di Windows:**
-     Unduh installer dari [situs resmi Redis](https://github.com/microsoftarchive/redis/releases) dan ikuti petunjuk instalasi.
-
-   - **Menjalankan Redis:**
-     Setelah instalasi, jalankan Redis server:
-     ```bash
-     redis-server
-     ```
-
-3. **Menyiapkan Mikroservis**
-
-   Buat direktori `services` untuk menampung mikroservis:
+   Instal dependencies yang diperlukan:
    ```bash
-   mkdir -p src/services/users
-   ```
-
-   Tambahkan modul, controller, dan service untuk mikroservis `users`:
-   ```bash
-   nest generate module services/users
-   nest generate service services/users
-   nest generate controller services/users
-   ```
-
-4. **Instalasi Redis dan Dependencies Mikroservis**
-
-   Instal Redis dan dependencies yang diperlukan:
-   ```bash
+   cd main-service
+   npm install --save @nestjs/microservices redis
+   cd ../microservice
    npm install --save @nestjs/microservices redis
    ```
 
-5. **Konfigurasi Mikroservis**
+3. **Menyiapkan Redis Server dengan Docker**
 
-   Konfigurasikan mikroservis untuk menggunakan Redis sebagai transportasi. Edit file `src/main.ts`:
+   Jalankan Redis server menggunakan Docker:
+   ```bash
+   docker run --name redis -p 6379:6379 -d redis
+   ```
+
+4. **Konfigurasi Mikroservis**
+
+   Di proyek `microservice`, edit file `src/main.ts` untuk konfigurasi mikroservis menggunakan Redis:
+   ```typescript
+   import { NestFactory } from '@nestjs/core';
+   import { AppModule } from './app.module';
+   import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+
+   async function bootstrap() {
+     const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+       transport: Transport.REDIS,
+       options: {
+         url: 'redis://localhost:6379',
+       },
+     });
+
+     await app.listen();
+   }
+   bootstrap();
+   ```
+
+   Buat service dan controller untuk menangani pesan di mikroservis:
+   ```bash
+   nest generate service app
+   nest generate controller app
+   ```
+
+   Edit file `src/app.service.ts`:
+   ```typescript
+   import { Injectable } from '@nestjs/common';
+   import { MessagePattern } from '@nestjs/microservices';
+
+   @Injectable()
+   export class AppService {
+     @MessagePattern({ cmd: 'greet' })
+     greet(name: string): string {
+       return `Hello, ${name}!`;
+     }
+   }
+   ```
+
+5. **Konfigurasi Main Service**
+
+   Di proyek `main-service`, edit file `src/main.ts` untuk menghubungkan ke mikroservis menggunakan Redis:
    ```typescript
    import { NestFactory } from '@nestjs/core';
    import { AppModule } from './app.module';
@@ -940,120 +956,75 @@ Dengan mengikuti langkah-langkah di atas, Anda telah berhasil membuat, mengonfig
    bootstrap();
    ```
 
-6. **Membuat Service untuk Mikroservis**
+   Buat service dan controller untuk mengirim pesan ke mikroservis di main-service:
+   ```bash
+   nest generate service app
+   nest generate controller app
+   ```
 
-   Edit file `src/services/users/users.service.ts`:
+   Edit file `src/app.service.ts`:
    ```typescript
-   import { Injectable } from '@nestjs/common';
+   import { Injectable, OnModuleInit } from '@nestjs/common';
+   import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
+   import { Observable } from 'rxjs';
 
    @Injectable()
-   export class UsersService {
-     private users = [];
+   export class AppService implements OnModuleInit {
+     private client: ClientProxy;
 
-     create(user) {
-       this.users.push(user);
+     onModuleInit() {
+       this.client = ClientProxyFactory.create({
+         transport: Transport.REDIS,
+         options: {
+           url: 'redis://localhost:6379',
+         },
+       });
      }
 
-     findAll() {
-       return this.users;
+     sendMessage(pattern: string, data: any): Observable<any> {
+       return this.client.send({ cmd: pattern }, data);
      }
    }
    ```
 
-7. **Membuat Controller untuk Mikroservis**
-
-   Edit file `src/services/users/users.controller.ts`:
+   Edit file `src/app.controller.ts`:
    ```typescript
-   import { Controller } from '@nestjs/common';
-   import { UsersService } from './users.service';
-   import { MessagePattern } from '@nestjs/microservices';
+   import { Controller, Get, Query } from '@nestjs/common';
+   import { AppService } from './app.service';
 
    @Controller()
-   export class UsersController {
-     constructor(private readonly usersService: UsersService) {}
+   export class AppController {
+     constructor(private readonly appService: AppService) {}
 
-     @MessagePattern('create_user')
-     createUser(user) {
-       this.usersService.create(user);
-       return { status: 'User created successfully' };
-     }
-
-     @MessagePattern('get_users')
-     getUsers() {
-       return this.usersService.findAll();
+     @Get('greet')
+     greet(@Query('name') name: string) {
+       return this.appService.sendMessage('greet', name);
      }
    }
    ```
 
-8. **Menjalankan Aplikasi**
+6. **Menjalankan Aplikasi**
 
-   Jalankan aplikasi NestJS:
+   Jalankan kedua proyek:
    ```bash
+   cd main-service
+   npm run start
+   cd ../microservice
    npm run start
    ```
 
-#### 3.2.2. Menguji Mikroservis
+7. **Menguji Aplikasi**
 
-1. **Menguji dengan Publisher/Subscriber Redis**
-
-   Anda dapat menggunakan client Redis untuk menguji mikroservis. Instal client Redis CLI:
+   Gunakan browser atau alat seperti Postman untuk mengakses endpoint:
    ```bash
-   npm install -g redis-cli
+   http://localhost:3000/greet?name=John
    ```
 
-   Kirim pesan ke mikroservis menggunakan perintah Redis CLI:
-   ```bash
-   redis-cli
-   publish create_user '{"name": "John Doe", "email": "john@example.com"}'
-   ```
+   Anda akan menerima respons dari mikroservis melalui Redis.
 
-   Anda juga dapat mempublikasikan pesan untuk mendapatkan daftar pengguna:
-   ```bash
-   redis-cli
-   publish get_users '{}'
-   ```
+#### 3.2.2. Kesimpulan
 
-2. **Menguji dengan Unit Test**
-
-   Buat file test untuk `users.service.ts`:
-   ```typescript
-   import { Test, TestingModule } from '@nestjs/testing';
-   import { UsersService } from './users.service';
-
-   describe('UsersService', () => {
-     let service: UsersService;
-
-     beforeEach(async () => {
-       const module: TestingModule = await Test.createTestingModule({
-         providers: [UsersService],
-       }).compile();
-
-       service = module.get<UsersService>(UsersService);
-     });
-
-     it('should be defined', () => {
-       expect(service).toBeDefined();
-     });
-
-     it('should create a user', () => {
-       service.create({ name: 'Test User', email: 'test@example.com' });
-       expect(service.findAll()).toEqual([{ name: 'Test User', email: 'test@example.com' }]);
-     });
-
-     it('should return all users', () => {
-       service.create({ name: 'Test User', email: 'test@example.com' });
-       service.create({ name: 'Another User', email: 'another@example.com' });
-       expect(service.findAll()).toEqual([
-         { name: 'Test User', email: 'test@example.com' },
-         { name: 'Another User', email: 'another@example.com' },
-       ]);
-     });
-   });
-   ```
-
-#### 3.2.3. Kesimpulan
-
-Dengan mengikuti langkah-langkah di atas, Anda telah berhasil membuat, mengonfigurasi, dan menguji mikroservis di NestJS menggunakan Redis sebagai transportasi. Ini adalah dasar yang baik untuk membangun arsitektur mikroservis yang lebih kompleks dan terukur. Jika Anda ingin menambahkan lebih banyak fitur atau layanan, Anda hanya perlu membuat modul dan controller tambahan serta mengonfigurasi transportasi yang sesuai.
+Dengan mengikuti langkah-langkah di atas, Anda telah berhasil membuat dan mengonfigurasi mikroservis di NestJS menggunakan Redis sebagai transportasi, dengan Redis berjalan di Docker. Panduan ini memberikan dasar yang kuat untuk membangun arsitektur mikroservis yang lebih kompleks dan terukur. Anda dapat menambahkan lebih banyak fitur atau layanan dengan membuat modul dan controller tambahan serta mengonfigurasi transportasi yang sesuai.
 
 #### 3.3. Microservices dengan gRPC
 
