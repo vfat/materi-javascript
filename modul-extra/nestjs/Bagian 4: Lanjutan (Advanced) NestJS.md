@@ -858,7 +858,7 @@ Menggunakan TCP sebagai transportasi untuk mikroservis adalah salah satu metode 
 
 Dengan mengikuti langkah-langkah di atas, Anda telah berhasil membuat, mengonfigurasi, dan menguji mikroservis di NestJS menggunakan TCP sebagai transportasi. Panduan ini memberikan dasar yang kuat untuk membangun arsitektur mikroservis yang lebih kompleks dan terukur. Anda dapat menambahkan lebih banyak fitur atau layanan dengan membuat modul dan controller tambahan serta mengonfigurasi transportasi yang sesuai.
 
-#### 3.2. Microservices dengan TCP
+#### 3.2. Microservices dengan Redis
 
 #### 3.2.1. Langkah-langkah Membuat Proyek Mikroservis dengan NestJS
 
